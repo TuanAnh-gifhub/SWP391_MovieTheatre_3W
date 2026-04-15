@@ -9,13 +9,10 @@ import movie.swp391.request.*;
 import movie.swp391.response.ApiResponse;
 import movie.swp391.response.PayByPointResponse;
 import movie.swp391.service.PaymentService;
-import movie.swp391.serviceImp.PayPalServiceImpl;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import com.paypal.api.payments.Payment;
 
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -25,7 +22,6 @@ import java.util.List;
 
 public class PaymentController {
     PaymentService paymentService;
-    PayPalServiceImpl payPalService;
 
 
     @PostMapping
@@ -86,68 +82,5 @@ public class PaymentController {
                 .status(200)
                 .build();
     }
-
-
-    @GetMapping("/payment-paypal-success")
-    public ApiResponse<String> paymentSuccess(
-            @RequestParam("paymentId") String paymentId,
-            @RequestParam("PayerID") String payerId,
-            @RequestParam("orderId") Integer orderId) throws IOException {
-        try {
-            Payment payment = payPalService.executePayment(paymentId, payerId);
-
-            String status = "E";
-            String country = "";
-            String method = "";
-            String amount = "";
-
-            if ("approved".equalsIgnoreCase(payment.getState())) {
-                status = "0";
-            }
-
-            // Lấy quốc gia
-            if (payment.getPayer() != null && payment.getPayer().getPayerInfo() != null) {
-                country = payment.getPayer().getPayerInfo().getCountryCode();
-            }
-
-            // Lấy phương thức thanh toán
-            if (payment.getPayer() != null) {
-                method = payment.getPayer().getPaymentMethod();
-            }
-
-            // Lấy số tiền
-            if (payment.getTransactions() != null && !payment.getTransactions().isEmpty()) {
-                double usdAmount = Double.parseDouble(payment.getTransactions().get(0).getAmount().getTotal());
-                amount = String.valueOf(usdAmount * 25000);
-            }
-            // Redirect về URL mong muốn
-            String redirectUrl = String.format(
-                    "http://localhost:8080/payment-success?orderId=%d&payPal_Code=%s&payPal_Locale=%s&payPal_Card=%s&payPal_Amount=%s",
-                    orderId,
-                    status,
-                    country != null ? country : "",
-                    method != null ? method : "",
-                    amount != null ? amount : ""
-            );
-            return ApiResponse.<String>builder()
-                    .result(redirectUrl)
-                    .message("Thanh toán thành công")
-                    .status(200)
-                    .build();
-
-        } catch (Exception e) {
-            // Redirect về URL thất bại
-
-            return ApiResponse.<String>builder()
-                    .result("http://localhost:8080/payment-success?payPal_Code=E")
-                    .message("Thanh toán thất bại")
-                    .status(200)
-                    .build();
-        }
-    }
-
-
-
-
-
 }
+

@@ -39,7 +39,6 @@ public class PaymentServiceImpl implements PaymentService {
     PromotionService promotionService;
     ExportService exportMovieDateService;
     private final CustomerRepository customerRepository;
-    PayPalServiceImpl payPalService;
 
 
 
@@ -70,26 +69,6 @@ public class PaymentServiceImpl implements PaymentService {
                 return paymentUrl;
             } catch (UnsupportedEncodingException e) {
                 return "Lỗi cổng phương thức";
-            }
-        } else if ("PayPal".equalsIgnoreCase(paymentMethod.getType())) {
-            Double amount = request.getTotalMoney()/25000;
-            Double usdAmount = amount*25000;
-
-            try {
-                // Có thể lấy mô tả đơn hàng, cancelUrl, successUrl động nếu cần
-                String description = "Thanh toán đơn hàng #" + request.getBookingId();
-                String cancelUrl = "https://sixcinema.site/payment-cancel";
-                String successUrl = "https://sixcinema.site/payment-success";
-                paymentUrl = payPalService.createPaymentUrl(
-                        amount,
-                        "USD",
-                        description,
-                        cancelUrl,
-                        successUrl
-                );
-                return paymentUrl;
-            } catch (Exception e) {
-                return "Lỗi cổng phương thức PayPal";
             }
         } else {
             return "Phương thức thanh toán chưa hỗ trợ";
