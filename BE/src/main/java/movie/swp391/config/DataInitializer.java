@@ -34,6 +34,8 @@ public class DataInitializer implements CommandLineRunner {
                 log.info("Creating role: {}", roleName);
                 Role role = new Role();
                 role.setRoleName(roleName);
+                role.setRoleCode(roleName);
+                role.setDescription(roleName + " role");
                 roleRepository.save(role);
             } else {
                 log.info("Role {} already exists", roleName);

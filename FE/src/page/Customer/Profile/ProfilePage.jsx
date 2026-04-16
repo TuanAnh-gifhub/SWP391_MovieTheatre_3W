@@ -245,6 +245,10 @@ const ProfilePage = () => {
                 src={formData?.avatar || avatarDefault}
                 alt="Profile"
                 className="w-24 h-24 rounded-full object-cover border-2 border-[#FF7120] shadow"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = avatarDefault;
+                }}
               />
               <button
                 className="absolute bottom-1 right-1 bg-[#FF7120] text-white p-2 rounded-full shadow hover:bg-orange-600 transition-all duration-200 border border-white"
@@ -267,7 +271,14 @@ const ProfilePage = () => {
               <div className="flex items-center justify-center w-full min-w-0">
                 <span className="break-all w-full min-w-0 text-lg font-extrabold text-gray-900 text-center">{formData?.fullName || ""}</span>
                 {formData?.rankImage && (
-                  <img src={formData.rankImage} alt={formData.rank} className="w-6 h-6 object-contain ml-1" />
+                  <img
+                    src={formData.rankImage}
+                    alt={formData.rank}
+                    className="w-6 h-6 object-contain ml-1"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
                 )}
               </div>
             </div>

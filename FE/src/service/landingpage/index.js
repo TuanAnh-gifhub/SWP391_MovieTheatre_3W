@@ -8,9 +8,43 @@ export const getAllMovies = async () => {
     }
     const data = await response.json();
     if (data.status === 200 && Array.isArray(data.result)) {
-      const filteredMovies = data.result.filter(
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const toDateSafe = (value) => {
+        if (!value) return null;
+        const parsed = new Date(`${value}T00:00:00`);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      };
+
+      const normalizedMovies = data.result.map((movie) => {
+        if (movie.status === "Now Showing" || movie.status === "Coming Soon") {
+          return movie;
+        }
+
+        const releaseDate = toDateSafe(movie.releaseDate);
+        const fromDate = toDateSafe(movie.fromDate);
+        const toDate = toDateSafe(movie.toDate);
+
+        let derivedStatus = "Now Showing";
+        if (releaseDate) {
+          derivedStatus = releaseDate > today ? "Coming Soon" : "Now Showing";
+        } else if (fromDate && today < fromDate) {
+          derivedStatus = "Coming Soon";
+        } else if (toDate && today > toDate) {
+          derivedStatus = "Now Showing";
+        }
+
+        return {
+          ...movie,
+          status: derivedStatus,
+        };
+      });
+
+      const filteredMovies = normalizedMovies.filter(
         (movie) => movie.status === "Now Showing" || movie.status === "Coming Soon"
       );
+
       return { error: false, result: filteredMovies };
     } else {
       return { error: true, message: data.message || "Lỗi lấy danh sách phim" };

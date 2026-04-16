@@ -501,7 +501,15 @@ const Header = () => {
                             setSearchResults([]);
                           }}
                         >
-                          <img src={movie.poster} alt={movie.title} className="w-10 h-14 object-cover rounded shadow border border-orange-200" />
+                          <img
+                            src={movie.poster || logo}
+                            alt={movie.title}
+                            className="w-10 h-14 object-cover rounded shadow border border-orange-200"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = logo;
+                            }}
+                          />
                           <span className="font-semibold text-gray-800 group-hover:text-orange-700 text-base">{movie.title}</span>
                         </Link>
                       ))}
@@ -581,6 +589,9 @@ const Header = () => {
                       src={userProfile.rankImage}
                       alt={userProfile.rank}
                       className="w-5 h-5 md:w-7 md:h-7 object-contain rounded-full border bg-white mr-1 md:mr-2 border-[#ff7120]"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
                     />
                   )}
                   <span className="text-[10px] md:text-xs font-bold text-[#00c9a7] drop-shadow-lg">{userProfile.rank}</span>

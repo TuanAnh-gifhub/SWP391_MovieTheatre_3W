@@ -4,6 +4,7 @@ import { getOrderHistory } from "../../../../service/profile";
 import QRCode from "react-qr-code";
 import { handleDownloadTicket } from "./DownLoadOrdered"; // Thêm dòng này
 import ParallaxBackground from '../../LandingPage/ParallaxBackground';
+import logo from "../../../../assets/img/logo.png";
 
 
 const encodeId = (id) => btoa(String(id));
@@ -83,7 +84,15 @@ const MyOrderedDetail = () => {
           {/* Poster phim */}
           {order.poster && (
             <div className="flex justify-center mb-2">
-              <img src={order.poster} alt="poster" className="w-40 h-56 object-cover rounded-lg shadow" />
+              <img
+                src={order.poster}
+                alt="poster"
+                className="w-40 h-56 object-cover rounded-lg shadow"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = logo;
+                }}
+              />
             </div>
           )}
           {/* Tên phim */}
@@ -149,10 +158,14 @@ const MyOrderedDetail = () => {
                       <div key={item.id || idx} className="flex items-center gap-3 border rounded-lg p-2 bg-gray-50">
                         {item.image && (
                           <img
-                            src={item.image}
+                            src={item.image || logo}
                             alt={item.name}
                             className="w-12 h-12 object-cover rounded shadow"
                             style={{ minWidth: 48 }}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = logo;
+                            }}
                           />
                         )}
                         <div className="flex-1">

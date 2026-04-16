@@ -3,6 +3,7 @@ import { getOrderHistory } from "../../../../service/profile";
 import { FiDownload, FiSearch, FiFilter, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { handleDownloadTicket } from "./DownLoadOrdered";
 import { useNavigate } from "react-router-dom";
+import logo from "../../../../assets/img/logo.png";
 
 const encodeId = (id) => btoa(String(id));
 const normalize = (str) =>
@@ -38,6 +39,10 @@ const TicketCard = React.forwardRef(({ order }, ref) => (
             objectFit: "cover",
             borderRadius: 8,
             margin: "auto",
+          }}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = logo;
           }}
         />
       </div>
@@ -259,9 +264,13 @@ const MyOrdered = () => {
             >
               <div className="flex gap-3 items-center">
                 <img
-                  src={order.poster || 'https://via.placeholder.com/80x120?text=No+Poster'}
+                  src={order.poster || logo}
                   alt="poster"
                   className="w-20 h-28 object-cover rounded-lg border"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = logo;
+                  }}
                 />
                 <div className="flex-1">
                   <div

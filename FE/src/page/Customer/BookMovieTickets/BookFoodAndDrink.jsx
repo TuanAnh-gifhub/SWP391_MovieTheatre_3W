@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getAllFoodAndDrinks } from "../../../service/foodanddrink";
 import { InputNumber, Button } from "antd";
+import logo from "../../../assets/img/logo.png";
 
 const BookFoodAndDrink = ({ selectedFoods = [], setSelectedFoods = () => {} }) => {
   const [foods, setFoods] = useState([]);
@@ -38,7 +39,15 @@ const BookFoodAndDrink = ({ selectedFoods = [], setSelectedFoods = () => {} }) =
           const quantity = getQuantity(food.id);
           return (
             <div key={food.id} className="flex items-center gap-3 border-b pb-2">
-              <img src={food.image} alt={food.name} className="w-14 h-14 object-cover rounded" />
+              <img
+                src={food.image || logo}
+                alt={food.name}
+                className="w-14 h-14 object-cover rounded"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = logo;
+                }}
+              />
               <div className="flex-1">
                 <div className="font-semibold">{food.name}</div>
                 <div className="text-sm text-gray-500">{food.description}</div>
