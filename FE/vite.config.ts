@@ -8,7 +8,9 @@ export default defineConfig({
     global: {},
   },
   server: {
-    host: true,
+    // Bind only to localhost to avoid printing multiple network addresses in the console
+    host: 'localhost',
+    // If you need external access (LAN or tunneling), change host back to true or a specific IP
     allowedHosts: ['.trycloudflare.com'], // cho phép Cloudflare tunnel
     proxy: {
       '/api': {
