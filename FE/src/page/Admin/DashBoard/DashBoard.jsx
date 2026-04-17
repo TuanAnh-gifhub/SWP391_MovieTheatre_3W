@@ -1,20 +1,20 @@
-import React, { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+    import React, { useMemo } from "react";
+    import { useNavigate } from "react-router-dom";
+    import {
+      Bar,
+      BarChart,
+      CartesianGrid,
+      Cell,
+      Legend,
+      Line,
+      LineChart,
+      Pie,
+      PieChart,
+      ResponsiveContainer,
+      Tooltip,
+      XAxis,
+      YAxis,
+    } from "recharts";
 import {
   Activity,
   AlertTriangle,
@@ -36,20 +36,20 @@ import {
 } from "lucide-react";
 
 const revenueTrendData = [
-  { date: "Apr 03", revenue: 35200000, tickets: 608, activeMovies: 13, occupancy: 70.5 },
-  { date: "Apr 04", revenue: 36800000, tickets: 624, activeMovies: 13, occupancy: 72.1 },
-  { date: "Apr 05", revenue: 40100000, tickets: 670, activeMovies: 13, occupancy: 74.9 },
-  { date: "Apr 06", revenue: 38900000, tickets: 645, activeMovies: 12, occupancy: 72.8 },
-  { date: "Apr 07", revenue: 42200000, tickets: 701, activeMovies: 12, occupancy: 76.4 },
-  { date: "Apr 08", revenue: 43800000, tickets: 726, activeMovies: 12, occupancy: 78.3 },
-  { date: "Apr 09", revenue: 44700000, tickets: 739, activeMovies: 12, occupancy: 79.6 },
-  { date: "Apr 10", revenue: 46300000, tickets: 758, activeMovies: 13, occupancy: 80.4 },
-  { date: "Apr 11", revenue: 48200000, tickets: 781, activeMovies: 13, occupancy: 82.2 },
-  { date: "Apr 12", revenue: 50100000, tickets: 815, activeMovies: 13, occupancy: 83.7 },
-  { date: "Apr 13", revenue: 49600000, tickets: 802, activeMovies: 13, occupancy: 82.9 },
-  { date: "Apr 14", revenue: 52300000, tickets: 839, activeMovies: 14, occupancy: 85.1 },
-  { date: "Apr 15", revenue: 53800000, tickets: 862, activeMovies: 14, occupancy: 86.0 },
-  { date: "Apr 16", revenue: 55900000, tickets: 894, activeMovies: 14, occupancy: 87.4 },
+  { date: "03/04", revenue: 35200000, tickets: 608, activeMovies: 13, occupancy: 70.5 },
+  { date: "04/04", revenue: 36800000, tickets: 624, activeMovies: 13, occupancy: 72.1 },
+  { date: "05/04", revenue: 40100000, tickets: 670, activeMovies: 13, occupancy: 74.9 },
+  { date: "06/04", revenue: 38900000, tickets: 645, activeMovies: 12, occupancy: 72.8 },
+  { date: "07/04", revenue: 42200000, tickets: 701, activeMovies: 12, occupancy: 76.4 },
+  { date: "08/04", revenue: 43800000, tickets: 726, activeMovies: 12, occupancy: 78.3 },
+  { date: "09/04", revenue: 44700000, tickets: 739, activeMovies: 12, occupancy: 79.6 },
+  { date: "10/04", revenue: 46300000, tickets: 758, activeMovies: 13, occupancy: 80.4 },
+  { date: "11/04", revenue: 48200000, tickets: 781, activeMovies: 13, occupancy: 82.2 },
+  { date: "12/04", revenue: 50100000, tickets: 815, activeMovies: 13, occupancy: 83.7 },
+  { date: "13/04", revenue: 49600000, tickets: 802, activeMovies: 13, occupancy: 82.9 },
+  { date: "14/04", revenue: 52300000, tickets: 839, activeMovies: 14, occupancy: 85.1 },
+  { date: "15/04", revenue: 53800000, tickets: 862, activeMovies: 14, occupancy: 86.0 },
+  { date: "16/04", revenue: 55900000, tickets: 894, activeMovies: 14, occupancy: 87.4 },
 ];
 
 const ticketSalesByHour = [
@@ -70,24 +70,24 @@ const ticketSalesByHour = [
 ];
 
 const moviePerformanceData = [
-  { name: "Dune: Part Two", tickets: 1420, revenue: 365800000, occupancy: 89.2 },
+  { name: "Dune: Phần Hai", tickets: 1420, revenue: 365800000, occupancy: 89.2 },
   { name: "Kung Fu Panda 4", tickets: 1305, revenue: 318700000, occupancy: 84.8 },
   { name: "Godzilla x Kong", tickets: 1282, revenue: 311900000, occupancy: 83.6 },
-  { name: "Civil War", tickets: 1148, revenue: 286400000, occupancy: 79.1 },
-  { name: "The First Omen", tickets: 1040, revenue: 249300000, occupancy: 77.3 },
+  { name: "Cuộc Nội Chiến", tickets: 1148, revenue: 286400000, occupancy: 79.1 },
+  { name: "Điềm Báo Đầu Tiên", tickets: 1040, revenue: 249300000, occupancy: 77.3 },
   { name: "Inside Out 2", tickets: 990, revenue: 228100000, occupancy: 75.8 },
-  { name: "Monkey Man", tickets: 870, revenue: 201600000, occupancy: 72.4 },
+  { name: "Người Khỉ", tickets: 870, revenue: 201600000, occupancy: 72.4 },
   { name: "Abigail", tickets: 802, revenue: 184900000, occupancy: 69.9 },
 ];
 
 const showtimeSeatAnalytics = [
-  { time: "09:15", room: "A1", movie: "Dune: Part Two", seatsBooked: 92, capacity: 120 },
+  { time: "09:15", room: "A1", movie: "Dune: Phần Hai", seatsBooked: 92, capacity: 120 },
   { time: "10:00", room: "B2", movie: "Kung Fu Panda 4", seatsBooked: 76, capacity: 100 },
-  { time: "11:20", room: "C1", movie: "Civil War", seatsBooked: 61, capacity: 90 },
+  { time: "11:20", room: "C1", movie: "Cuộc Nội Chiến", seatsBooked: 61, capacity: 90 },
   { time: "13:00", room: "A2", movie: "Godzilla x Kong", seatsBooked: 108, capacity: 120 },
   { time: "14:30", room: "D1", movie: "Inside Out 2", seatsBooked: 69, capacity: 100 },
-  { time: "16:10", room: "B1", movie: "The First Omen", seatsBooked: 82, capacity: 110 },
-  { time: "18:40", room: "A3", movie: "Dune: Part Two", seatsBooked: 116, capacity: 120 },
+  { time: "16:10", room: "B1", movie: "Điềm Báo Đầu Tiên", seatsBooked: 82, capacity: 110 },
+  { time: "18:40", room: "A3", movie: "Dune: Phần Hai", seatsBooked: 116, capacity: 120 },
   { time: "20:15", room: "C2", movie: "Godzilla x Kong", seatsBooked: 98, capacity: 110 },
 ];
 
@@ -101,26 +101,26 @@ const ageDistributionData = [
 ];
 
 const customerMixData = [
-  { name: "New", value: 38 },
-  { name: "Returning", value: 62 },
+  { name: "Khách mới", value: 38 },
+  { name: "Khách quay lại", value: 62 },
 ];
 
 const revenueBreakdownData = [
-  { period: "Mon", ticketRevenue: 58500000, foodRevenue: 15100000 },
-  { period: "Tue", ticketRevenue: 60200000, foodRevenue: 16400000 },
-  { period: "Wed", ticketRevenue: 61800000, foodRevenue: 17300000 },
-  { period: "Thu", ticketRevenue: 63900000, foodRevenue: 18100000 },
-  { period: "Fri", ticketRevenue: 68900000, foodRevenue: 22200000 },
-  { period: "Sat", ticketRevenue: 73400000, foodRevenue: 25500000 },
-  { period: "Sun", ticketRevenue: 70700000, foodRevenue: 24300000 },
+  { period: "Thứ 2", ticketRevenue: 58500000, foodRevenue: 15100000 },
+  { period: "Thứ 3", ticketRevenue: 60200000, foodRevenue: 16400000 },
+  { period: "Thứ 4", ticketRevenue: 61800000, foodRevenue: 17300000 },
+  { period: "Thứ 5", ticketRevenue: 63900000, foodRevenue: 18100000 },
+  { period: "Thứ 6", ticketRevenue: 68900000, foodRevenue: 22200000 },
+  { period: "Thứ 7", ticketRevenue: 73400000, foodRevenue: 25500000 },
+  { period: "CN", ticketRevenue: 70700000, foodRevenue: 24300000 },
 ];
 
 const comboOrdersData = [
-  { combo: "Couple Combo", orders: 530 },
-  { combo: "Family Feast", orders: 420 },
-  { combo: "Solo Saver", orders: 388 },
-  { combo: "Kids Party", orders: 246 },
-  { combo: "Late Night Duo", orders: 210 },
+  { combo: "Combo Đôi", orders: 530 },
+  { combo: "Bữa Tiệc Gia Đình", orders: 420 },
+  { combo: "Tiết Kiệm Cá Nhân", orders: 388 },
+  { combo: "Bữa Tiệc Trẻ Em", orders: 246 },
+  { combo: "Bộ Đôi Đêm Khuya", orders: 210 },
 ];
 
 const systemHealth = {
@@ -265,49 +265,49 @@ const DashBoard = () => {
         <header className="rounded-2xl border border-slate-200 bg-gradient-to-r from-cyan-50 via-white to-amber-50 p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-medium text-cyan-700">Movie Booking Admin</p>
-              <h1 className="mt-1 text-2xl font-bold text-slate-900 md:text-3xl">Performance Dashboard</h1>
+              <p className="text-sm font-medium text-cyan-700">Quản trị đặt vé xem phim</p>
+              <h1 className="mt-1 text-2xl font-bold text-slate-900 md:text-3xl">Bảng điều khiển hiệu suất</h1>
               <p className="mt-1 text-sm text-slate-600">
-                Unified view of revenue, showtime operations, customer behavior, and platform health.
+                Góc nhìn tổng hợp về doanh thu, hoạt động suất chiếu, hành vi khách hàng và sức khỏe nền tảng.
               </p>
             </div>
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
               <Clock3 className="h-4 w-4 text-cyan-600" />
-              Updated 5 minutes ago
+              Cập nhật 5 phút trước
             </div>
           </div>
         </header>
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard
-            title="Total Revenue (Today)"
+            title="Tổng doanh thu (Hôm nay)"
             value={formatCurrency(summary.todayRevenue)}
             trendValue={summary.revenueDelta}
-            helperText="Compared to yesterday"
+            helperText="So với hôm qua"
             icon={DollarSign}
             iconBgClass="bg-gradient-to-br from-cyan-500 to-cyan-700"
           />
           <KpiCard
-            title="Total Tickets Sold"
+            title="Tổng vé đã bán"
             value={summary.todayTickets.toLocaleString("en-US")}
             trendValue={summary.ticketsDelta}
-            helperText="Compared to yesterday"
+            helperText="So với hôm qua"
             icon={Ticket}
             iconBgClass="bg-gradient-to-br from-emerald-500 to-emerald-700"
           />
           <KpiCard
-            title="Total Active Movies"
+            title="Tổng phim đang chiếu"
             value={summary.activeMovies.toLocaleString("en-US")}
             trendValue={summary.moviesDelta}
-            helperText="Titles currently screening"
+            helperText="Số phim đang chiếu"
             icon={Film}
             iconBgClass="bg-gradient-to-br from-amber-500 to-orange-600"
           />
           <KpiCard
-            title="Seat Occupancy Rate"
+            title="Tỷ lệ lấp đầy ghế"
             value={formatPercent(summary.occupancyRate)}
             trendValue={summary.occupancyDelta}
-            helperText="Compared to yesterday"
+            helperText="So với hôm qua"
             icon={Percent}
             iconBgClass="bg-gradient-to-br from-violet-500 to-fuchsia-600"
           />
@@ -316,8 +316,8 @@ const DashBoard = () => {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <div className="xl:col-span-8">
             <DashboardCard
-              title="Revenue Trend"
-              subtitle="Daily revenue movement with baseline comparison"
+              title="Xu hướng doanh thu"
+              subtitle="Biến động doanh thu theo ngày với đường cơ sở so sánh"
             >
               <div className="h-80 w-full">
                 <ResponsiveContainer>
@@ -344,7 +344,7 @@ const DashBoard = () => {
                       strokeWidth={3}
                       dot={{ r: 3 }}
                       activeDot={{ r: 6 }}
-                      name="Revenue"
+                      name="Doanh thu"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -354,8 +354,8 @@ const DashBoard = () => {
 
           <div className="xl:col-span-4">
             <DashboardCard
-              title="Ticket Sales by Time"
-              subtitle="Peak-hour distribution across the day"
+              title="Lượng vé bán theo giờ"
+              subtitle="Phân bố cao điểm trong ngày"
             >
               <div className="h-80 w-full">
                 <ResponsiveContainer>
@@ -364,7 +364,7 @@ const DashBoard = () => {
                     <XAxis dataKey="hour" tick={{ fill: "#475569", fontSize: 11 }} />
                     <YAxis tick={{ fill: "#475569", fontSize: 12 }} />
                     <Tooltip
-                      formatter={(value) => `${value} tickets`}
+                      formatter={(value) => `${value} vé`}
                       contentStyle={{
                         borderRadius: "0.75rem",
                         border: "1px solid #cbd5e1",
@@ -382,8 +382,8 @@ const DashBoard = () => {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <div className="xl:col-span-5">
             <DashboardCard
-              title="Top 5 Movies by Revenue"
-              subtitle="Current leaderboard by box office contribution"
+              title="Top 5 phim theo doanh thu"
+              subtitle="Bảng xếp hạng đóng góp doanh thu phòng vé"
             >
               <div className="h-96 w-full">
                 <ResponsiveContainer>
@@ -408,17 +408,17 @@ const DashBoard = () => {
 
           <div className="xl:col-span-7">
             <DashboardCard
-              title="Movie Performance"
-              subtitle="Tickets, revenue, and occupancy by title"
+              title="Hiệu suất phim"
+              subtitle="Lượng vé, doanh thu và tỷ lệ lấp đầy theo phim"
             >
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 text-left text-slate-500">
-                      <th className="px-3 py-2 font-medium">Movie</th>
-                      <th className="px-3 py-2 font-medium">Tickets Sold</th>
-                      <th className="px-3 py-2 font-medium">Revenue</th>
-                      <th className="px-3 py-2 font-medium">Occupancy</th>
+                      <th className="px-3 py-2 font-medium">Phim</th>
+                      <th className="px-3 py-2 font-medium">Vé đã bán</th>
+                      <th className="px-3 py-2 font-medium">Doanh thu</th>
+                      <th className="px-3 py-2 font-medium">Tỷ lệ lấp đầy</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -442,18 +442,18 @@ const DashBoard = () => {
         </section>
 
         <DashboardCard
-          title="Showtime & Seat Analytics"
-          subtitle="Live occupancy overview by showtime and room"
+          title="Phân tích suất chiếu & ghế ngồi"
+          subtitle="Tổng quan tỷ lệ lấp đầy theo suất chiếu và phòng chiếu"
         >
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 text-left text-slate-500">
-                  <th className="px-3 py-2 font-medium">Time</th>
-                  <th className="px-3 py-2 font-medium">Room</th>
-                  <th className="px-3 py-2 font-medium">Movie</th>
-                  <th className="px-3 py-2 font-medium">Seats Booked</th>
-                  <th className="px-3 py-2 font-medium">Occupancy</th>
+                  <th className="px-3 py-2 font-medium">Giờ</th>
+                  <th className="px-3 py-2 font-medium">Phòng</th>
+                  <th className="px-3 py-2 font-medium">Phim</th>
+                  <th className="px-3 py-2 font-medium">Ghế đã đặt</th>
+                  <th className="px-3 py-2 font-medium">Tỷ lệ lấp đầy</th>
                 </tr>
               </thead>
               <tbody>
@@ -490,8 +490,8 @@ const DashBoard = () => {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <div className="xl:col-span-6">
             <DashboardCard
-              title="Customer Analytics"
-              subtitle="Age profile and customer lifecycle mix"
+              title="Phân tích khách hàng"
+              subtitle="Hồ sơ độ tuổi và vòng đời khách hàng"
             >
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="h-72 w-full">
@@ -500,7 +500,7 @@ const DashBoard = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                       <XAxis dataKey="ageGroup" />
                       <YAxis />
-                      <Tooltip formatter={(value) => `${value} customers`} />
+                      <Tooltip formatter={(value) => `${value} khách hàng`} />
                       <Bar dataKey="customers" fill="#14b8a6" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -532,8 +532,8 @@ const DashBoard = () => {
 
           <div className="xl:col-span-6">
             <DashboardCard
-              title="Revenue Breakdown"
-              subtitle="Ticket revenue vs Food & Beverage revenue"
+              title="Phân tích doanh thu"
+              subtitle="Doanh thu vé so với doanh thu đồ ăn & thức uống"
             >
               <div className="h-72 w-full">
                 <ResponsiveContainer>
@@ -547,14 +547,14 @@ const DashBoard = () => {
                       dataKey="ticketRevenue"
                       stackId="revenue"
                       fill="#0ea5e9"
-                      name="Ticket Revenue"
+                      name="Doanh thu vé"
                       radius={[6, 6, 0, 0]}
                     />
                     <Bar
                       dataKey="foodRevenue"
                       stackId="revenue"
                       fill="#f59e0b"
-                      name="F&B Revenue"
+                      name="Doanh thu F&B"
                       radius={[6, 6, 0, 0]}
                     />
                   </BarChart>
@@ -563,14 +563,14 @@ const DashBoard = () => {
 
               <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-xl border border-cyan-100 bg-cyan-50 p-3">
-                  <p className="text-xs uppercase text-cyan-700">Ticket Revenue</p>
+                  <p className="text-xs uppercase text-cyan-700">Doanh thu vé</p>
                   <p className="mt-1 text-lg font-semibold text-cyan-900">{formatCurrency(summary.ticketRevenueTotal)}</p>
-                  <p className="text-xs text-cyan-700">{formatPercent(summary.ticketShare)} contribution</p>
+                  <p className="text-xs text-cyan-700">{formatPercent(summary.ticketShare)} đóng góp</p>
                 </div>
                 <div className="rounded-xl border border-amber-100 bg-amber-50 p-3">
-                  <p className="text-xs uppercase text-amber-700">F&B Revenue</p>
+                  <p className="text-xs uppercase text-amber-700">Doanh thu F&B</p>
                   <p className="mt-1 text-lg font-semibold text-amber-900">{formatCurrency(summary.foodRevenueTotal)}</p>
-                  <p className="text-xs text-amber-700">{formatPercent(summary.foodShare)} contribution</p>
+                  <p className="text-xs text-amber-700">{formatPercent(summary.foodShare)} đóng góp</p>
                 </div>
               </div>
             </DashboardCard>
@@ -580,11 +580,11 @@ const DashBoard = () => {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           <div className="xl:col-span-6">
             <DashboardCard
-              title="Combo / Upsell Analysis"
-              subtitle="Conversion on food bundles and top-performing combos"
+              title="Phân tích Combo / Upsell"
+              subtitle="Tỷ lệ chuyển đổi gói đồ ăn và combo hàng đầu"
             >
               <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                <p className="text-sm text-emerald-700">Users buying combo</p>
+                <p className="text-sm text-emerald-700">Khách hàng mua combo</p>
                 <p className="mt-1 text-2xl font-bold text-emerald-900">{formatPercent(summary.comboUsersPercent)}</p>
                 <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-emerald-100">
                   <div
@@ -593,7 +593,7 @@ const DashBoard = () => {
                   />
                 </div>
                 <p className="mt-2 text-xs text-emerald-700">
-                  {summary.comboOrdersTotal.toLocaleString("en-US")} combo orders in selected period
+                  {summary.comboOrdersTotal.toLocaleString("en-US")} đơn combo trong kỳ đã chọn
                 </p>
               </div>
 
@@ -603,7 +603,7 @@ const DashBoard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="combo" tick={{ fontSize: 11 }} />
                     <YAxis />
-                    <Tooltip formatter={(value) => `${value} orders`} />
+                    <Tooltip formatter={(value) => `${value} đơn`} />
                     <Bar dataKey="orders" fill="#14b8a6" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -613,40 +613,33 @@ const DashBoard = () => {
 
           <div className="xl:col-span-6 space-y-6">
             <DashboardCard
-              title="System Health Monitoring"
-              subtitle="Operational reliability for booking and payments"
+              title="Thông số thanh toán đặt vé"
+              subtitle="Độ tin cậy vận hành cho đặt vé và thanh toán"
             >
               <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 <HealthCard
-                  title="Payment Success"
+                  title="Thanh toán thành công"
                   value={systemHealth.paymentSuccessRate}
                   unit="%"
                   icon={ShieldCheck}
                   toneClass="bg-gradient-to-br from-emerald-500 to-emerald-700"
-                  helper="Healthy payment gateway"
+                  helper="Cổng thanh toán hoạt động tốt"
                 />
                 <HealthCard
-                  title="Failed Bookings"
+                  title="Đặt vé thất bại"
                   value={systemHealth.failedBookings}
                   unit=""
                   icon={AlertTriangle}
                   toneClass="bg-gradient-to-br from-amber-500 to-orange-600"
-                  helper="Requires watchlist"
+                  helper="Cần theo dõi"
                 />
-                <HealthCard
-                  title="Seat Conflicts"
-                  value={systemHealth.seatConflicts}
-                  unit=""
-                  icon={Bug}
-                  toneClass="bg-gradient-to-br from-rose-500 to-rose-700"
-                  helper="Race-condition events"
-                />
+
               </div>
             </DashboardCard>
 
             <DashboardCard
-              title="Quick Actions"
-              subtitle="Fast access to high-impact admin operations"
+              title="Thao tác nhanh"
+              subtitle="Truy cập nhanh các thao tác quản trị quan trọng"
             >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <button
@@ -655,7 +648,7 @@ const DashBoard = () => {
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-cyan-700 px-4 py-3 text-sm font-semibold text-white transition hover:from-cyan-700 hover:to-cyan-800"
                 >
                   <PlusCircle className="h-4 w-4" />
-                  Add Movie
+                  Thêm phim
                 </button>
                 <button
                   type="button"
@@ -663,7 +656,7 @@ const DashBoard = () => {
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 text-sm font-semibold text-white transition hover:from-emerald-700 hover:to-emerald-800"
                 >
                   <CalendarPlus className="h-4 w-4" />
-                  Create Showtime
+                  Tạo suất chiếu
                 </button>
                 <button
                   type="button"
@@ -671,7 +664,7 @@ const DashBoard = () => {
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 px-4 py-3 text-sm font-semibold text-white transition hover:from-amber-700 hover:to-orange-700"
                 >
                   <Settings2 className="h-4 w-4" />
-                  Update Ticket Price
+                  Cập nhật giá vé
                 </button>
               </div>
             </DashboardCard>
@@ -682,7 +675,7 @@ const DashBoard = () => {
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
             <Activity className="h-5 w-5 text-cyan-600" />
             <div>
-              <p className="text-xs text-slate-500">Daily Revenue Avg</p>
+              <p className="text-xs text-slate-500">Doanh thu TB ngày</p>
               <p className="text-sm font-semibold text-slate-900">
                 {formatCurrency(
                   Math.round(
@@ -695,22 +688,22 @@ const DashBoard = () => {
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
             <Popcorn className="h-5 w-5 text-amber-600" />
             <div>
-              <p className="text-xs text-slate-500">Top Combo</p>
+              <p className="text-xs text-slate-500">Combo hàng đầu</p>
               <p className="text-sm font-semibold text-slate-900">{comboOrdersData[0].combo}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
             <Users className="h-5 w-5 text-emerald-600" />
             <div>
-              <p className="text-xs text-slate-500">New Customers</p>
-              <p className="text-sm font-semibold text-slate-900">{customerMixData[0].value}% share</p>
+              <p className="text-xs text-slate-500">Khách hàng mới</p>
+              <p className="text-sm font-semibold text-slate-900">{customerMixData[0].value}% tỷ lệ</p>
             </div>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
             <RefreshCcw className="h-5 w-5 text-violet-600" />
             <div>
-              <p className="text-xs text-slate-500">Returning Customers</p>
-              <p className="text-sm font-semibold text-slate-900">{customerMixData[1].value}% share</p>
+              <p className="text-xs text-slate-500">Khách hàng quay lại</p>
+              <p className="text-sm font-semibold text-slate-900">{customerMixData[1].value}% tỷ lệ</p>
             </div>
           </div>
         </section>
