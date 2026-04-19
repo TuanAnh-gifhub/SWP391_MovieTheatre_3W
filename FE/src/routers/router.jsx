@@ -22,7 +22,7 @@ import ShowTimeCreate from "../page/Admin/ShowTime/ShowTimeCreate";
 import ShowTimeManagement from "../page/Admin/ShowTime/ShowTimeManagement";
 import WishListManagement from "../page/Customer/WishList/WishListManagement"; 
 import VerifyOTP from "../page/Customer/LoginPage/VerifyOTP"; 
-import DashBoard from "../page/Admin/DashBoard/DashBoard"; 
+import DashBoard from "../page/Admin/DashBoard/DashBoard";
 import CinemaRoomManagement from "../page/Admin/CinemaRoom/CinemaRoomManagement";
 import ConfirmBooking from "../page/Customer/BookMovieTickets/ConfirmBooking";
 import PaymentMethod from "../page/Customer/Payment/PaymentMethod";

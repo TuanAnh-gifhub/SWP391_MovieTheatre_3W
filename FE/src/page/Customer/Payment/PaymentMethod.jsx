@@ -109,7 +109,7 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center py-10 min-h-screen">
         <div className="bg-white shadow-xl rounded-xl p-8 max-w-lg w-full border border-gray-200">
-          <h2 className="text-xl font-bold mb-4 text-center">Chọn phương thức thanh toán</h2>
+          <h2 className="text-xl mb-4 text-center">Chọn phương thức thanh toán</h2>
           <h3>Thanh toán nội địa:</h3>
           <div className="grid grid-cols-2 gap-4 mb-6 items-start">
             {localPaymentMethods.map((method) => (
@@ -129,12 +129,12 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
                 </button>
                 {/* Hiển thị box thông tin test VNPay - chỉ hiển thị trong môi trường development */}
                 {method.key === 'vnpay' && process.env.NODE_ENV === 'development' && (
-                  <div className="ml-2 bg-yellow-50 border border-yellow-400 rounded-lg p-3 text-sm shadow max-w-xs">
-                    <div className="font-semibold text-yellow-700 mb-1">Thông tin test VNPay:</div>
-                    <div><span className="font-medium">Số thẻ:</span> <span className="select-all">9704198526191432198</span></div>
-                    <div><span className="font-medium">Hết hạn:</span> 07/15</div>
-                    <div><span className="font-medium">Tên:</span> NGUYEN VAN A</div>
-                    <div><span className="font-medium">OTP:</span> 123456</div>
+                  <div className="ml-2 bg-yellow-50 border border-yellow-400 rounded-lg text-sm shadow max-w-xs leading-tight">
+                    <div className="text-yellow-700 mb-1">Thông tin test VNPay:</div>
+                    <div><span>Số thẻ:</span> <span className="select-all">9704198526191432198</span></div>
+                    <div><span>Hết hạn:</span> 07/15</div>
+                    <div><span>Tên:</span> NGUYEN VAN A</div>
+                    <div><span>OTP:</span> 123456</div>
                   </div>
                 )}
               </React.Fragment>

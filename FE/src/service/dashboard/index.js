@@ -155,3 +155,32 @@ export async function downloadCustomerReportPdf({ start, end, sortBy = 'totalSpe
     return null;
   }
 }
+
+export async function getDashboardAnalyticsOverview({ start, end, groupBy = 'day', focusDate }) {
+  try {
+    const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
+    const token = adminUser.token;
+
+    const params = new URLSearchParams({
+      start,
+      end,
+      groupBy,
+      ...(focusDate ? { focusDate } : {}),
+    });
+
+    const res = await axios.get(`${import.meta.env.VITE_API_URL}/dashboard/analytics-overview?${params.toString()}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || error?.message || "Không thể tải dữ liệu dashboard",
+      data: null,
+    };
+  }
+}

@@ -8,7 +8,8 @@ export default defineConfig({
     global: {},
   },
   server: {
-    host: true,
+    // Only expose dev server locally; this removes extra Network URLs.
+    host: 'localhost',
     allowedHosts: ['.trycloudflare.com'], // cho phép Cloudflare tunnel
     proxy: {
       '/api': {
