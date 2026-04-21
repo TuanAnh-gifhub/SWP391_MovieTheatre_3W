@@ -93,6 +93,10 @@ export const router = createBrowserRouter([
         element: <PaymentSuccess />, 
       },
       {
+        path: "/wallet/deposit/result",
+        element: <PaymentSuccess />,
+      },
+      {
         path: "/voucher-home",
         element: <VoucherHome />,
       },

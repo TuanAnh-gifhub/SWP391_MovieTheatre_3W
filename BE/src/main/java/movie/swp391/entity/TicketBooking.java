@@ -66,6 +66,12 @@ public class TicketBooking {
     @JoinColumn(name = "paymentId", referencedColumnName = "id")
     private PaymentMethod paymentMethod;
 
+    @Column(name = "payos_order_code", length = 64)
+    private String payosOrderCode;
+
+    @Column(name = "payos_payment_link_id", length = 128)
+    private String payosPaymentLinkId;
+
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL)
     private List<TicketDetail> ticketDetails;

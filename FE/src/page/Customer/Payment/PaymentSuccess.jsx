@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { confirmVNPayStatus } from "../../../service/payment";
+import { confirmPayOSStatus, confirmVNPayStatus } from "../../../service/payment";
 import { FaCheckCircle, FaTimesCircle } from "react-icons/fa";
 import { LoginVersionContext } from "../../../layout/RootLayout";
 import ParallaxBackground from '../LandingPage/ParallaxBackground';
@@ -41,12 +41,42 @@ const PaymentSuccess = () => {
     return stored === 'true';
   });
 
+  const clearPaymentStorage = () => {
+    localStorage.removeItem("bookingId");
+    localStorage.removeItem("cinemaRoomId");
+    localStorage.removeItem("seats");
+    localStorage.removeItem("totalMoney");
+    localStorage.removeItem("couponCode");
+  };
+
+  const isSuccessText = (value) => {
+    const normalized = (value || "").toLowerCase();
+    return normalized.includes("thành công")
+      || normalized.includes("thanh toan thanh cong")
+      || normalized.includes("success");
+  };
+
+  const isFailureStatus = (value) => {
+    const normalized = (value || "").trim().toLowerCase();
+    return ["cancel", "cancelled", "canceled", "fail", "failed", "error"].includes(normalized);
+  };
+
   useEffect(() => {
     const params = getQueryParams(location.search);
     const bookingId = Number(params.orderId || params.vnp_TxnRef);
     const totalMoney = Number(params.vnp_Amount) / 100;
     const vnp_ResponseCode = params.vnp_ResponseCode;
     const vnp_TransactionStatus = params.vnp_TransactionStatus;
+    const payosOrderCode = params.orderCode;
+    const payosStatus = params.status;
+    const payosCode = params.code;
+    const payosCancel = (params.cancel || "").toLowerCase() === "true";
+    const isVNPayFlow = Boolean(vnp_ResponseCode || vnp_TransactionStatus || params.vnp_TxnRef);
+    const isPayOSFlow = !isVNPayFlow && (
+      Boolean(payosOrderCode)
+      || (location.pathname || "").toLowerCase() === "/wallet/deposit/result"
+      || (params.paymentGateway || "").toLowerCase() === "payos"
+    );
 
     // Lấy dữ liệu từ localStorage thay vì chỉ dựa vào query params
     const storedBookingId = Number(localStorage.getItem("bookingId")) || bookingId;
@@ -82,22 +112,78 @@ const PaymentSuccess = () => {
       setStatus("success");
       setMessage("Thanh toán bằng điểm thành công!");
       // Xóa dữ liệu localStorage sau khi thanh toán thành công
-      localStorage.removeItem("bookingId");
-      localStorage.removeItem("cinemaRoomId");
-      localStorage.removeItem("seats");
-      localStorage.removeItem("totalMoney");
-      localStorage.removeItem("couponCode");
+      clearPaymentStorage();
       localStorage.removeItem("usePointsPayment");
       localStorage.removeItem("pointsUsed");
       return;
     }
 
+    // Validation dữ liệu cho thanh toán qua PayOS
+    if (isPayOSFlow) {
+      let selectedPromotionIds = [];
+      try {
+        const promo = localStorage.getItem("selectedPromotionIds");
+        if (promo) selectedPromotionIds = JSON.parse(promo);
+      } catch {}
+
+      const requestData = {
+        bookingId: storedBookingId > 0 ? storedBookingId : undefined,
+        totalMoney: storedTotalMoney > 0 ? storedTotalMoney : undefined,
+        cinemaRoomId,
+        seats,
+        payosOrderCode,
+        payosStatus,
+        payosCode,
+        selectedPromotionIds,
+      };
+
+      confirmPayOSStatus(requestData)
+        .then((res) => {
+          const apiMessage = res?.result || res?.message || "";
+          const payosSuccess = !payosCancel
+            && !isFailureStatus(payosStatus)
+            && (
+              isSuccessStatus(payosStatus)
+              || payosCode === "00"
+              || isSuccessText(apiMessage)
+            );
+
+          setOrderInfo({
+            bookingId: storedBookingId > 0 ? storedBookingId : payosOrderCode,
+            totalMoney: storedTotalMoney,
+            cinemaRoomId,
+            seats,
+            payDate: new Date().toISOString(),
+            orderInfo: `PAYOS-${payosOrderCode}`,
+            bankCode: "PayOS",
+            cardType: "QR",
+            status: payosSuccess ? "Success" : "Fail",
+          });
+
+          if (payosSuccess) {
+            setStatus("success");
+            setMessage("Thanh toán thành công!");
+            clearPaymentStorage();
+            localStorage.removeItem("selectedPromotionIds");
+          } else {
+            setStatus("fail");
+            setMessage("Thanh toán thất bại hoặc bị hủy!");
+          }
+        })
+        .catch((err) => {
+          console.error("PayOS confirmation error:", err);
+          setStatus("fail");
+          setMessage("Lỗi xác nhận thanh toán PayOS!");
+        });
+
+      return;
+    }
+
     // Validation dữ liệu cho thanh toán thường (VNPay)
     if (
+      isVNPayFlow &&
       storedBookingId && storedBookingId > 0 &&
       storedTotalMoney && storedTotalMoney > 0 &&
-      cinemaRoomId && cinemaRoomId > 0 &&
-      seats && seats.length > 0 &&
       vnp_ResponseCode &&
       vnp_TransactionStatus
     ) {
@@ -136,11 +222,8 @@ const PaymentSuccess = () => {
             setStatus("success");
             setMessage("Thanh toán thành công!");
             // Xóa dữ liệu localStorage sau khi thanh toán thành công
-            localStorage.removeItem("bookingId");
-            localStorage.removeItem("cinemaRoomId");
-            localStorage.removeItem("seats");
-            localStorage.removeItem("totalMoney");
-            localStorage.removeItem("couponCode");
+            clearPaymentStorage();
+            localStorage.removeItem("selectedPromotionIds");
           } else {
             setStatus("fail");
             setMessage("Thanh toán thất bại hoặc bị hủy!");
@@ -157,13 +240,14 @@ const PaymentSuccess = () => {
         storedTotalMoney,
         cinemaRoomId,
         seats,
+        payosOrderCode,
         vnp_ResponseCode,
         vnp_TransactionStatus
       });
       setStatus("fail");
       setMessage("Thiếu thông tin xác nhận thanh toán hoặc dữ liệu không hợp lệ!");
     }
-  }, [location.search]);
+  }, [location.search, location.pathname]);
 
   // Trigger Header refresh after successful payment
   useEffect(() => {
@@ -185,6 +269,11 @@ const PaymentSuccess = () => {
 
   // Lấy movieTitle từ orderInfo hoặc localStorage
   const movieTitle = orderInfo?.movieTitle || localStorage.getItem("movieTitle") || "";
+
+  function isSuccessStatus(value) {
+    const normalized = (value || "").trim().toLowerCase();
+    return ["success", "succes", "paid", "succeeded"].includes(normalized);
+  }
 
   return (
     <div className="relative min-h-screen w-full">

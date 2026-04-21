@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import movie.swp391.entity.PaymentMethod;
 import movie.swp391.request.*;
-import movie.swp391.request.*;
 import movie.swp391.response.ApiResponse;
 import movie.swp391.response.PayByPointResponse;
 import movie.swp391.service.PaymentService;
@@ -14,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/payment")
@@ -43,6 +43,12 @@ public class PaymentController {
                 .status(200)
                 .build();
     }
+
+    @PostMapping("/payos/webhook")
+    public Map<String, Object> handlePayOsWebhook(@RequestBody Map<String, Object> payload) {
+        return paymentService.handlePayOsWebhook(payload);
+    }
+
     @GetMapping("/view-all-payments")
     @PreAuthorize("@permissionService.hasPermission(authentication, 'VIEW_PAYMENT')")
     public ApiResponse<List<PaymentMethod>> getAllMovies() {

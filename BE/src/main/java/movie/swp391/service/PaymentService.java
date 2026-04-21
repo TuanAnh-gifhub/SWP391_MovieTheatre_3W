@@ -7,10 +7,12 @@ import movie.swp391.response.PayByPointResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
+import java.util.Map;
 
 public interface PaymentService {
     String processPayment(PaymentRequest request);
     String resultPayment(PaymentResultRequest request);
+    Map<String, Object> handlePayOsWebhook(Map<String, Object> payload);
     List<PaymentMethod> getAllPayment();
     PayByPointResponse payByPointsShow(PayByPointRequest request);
     @PreAuthorize("hasRole('CUSTOMER')")

@@ -1,5 +1,37 @@
 import axios from "axios";
 
+const API_BASE = `${import.meta.env.VITE_API_URL}/payment`;
+
+const getAuthHeader = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+const createPaymentLink = async ({
+  bookingId,
+  totalMoney,
+  cinemaRoomId,
+  seats,
+  paymentGateway,
+  paymentId,
+  ipAddress = "13.160.92.202",
+}) => {
+  const requestData = {
+    bookingId,
+    totalMoney,
+    cinemaRoomId,
+    seats,
+    paymentGateway,
+    paymentId,
+    ipAddress,
+    success: true,
+  };
+  const res = await axios.post(API_BASE, requestData, {
+    headers: getAuthHeader(),
+  });
+  return res.data;
+};
+
 export const payWithVNPay = async ({
   bookingId,
   totalMoney,
@@ -7,19 +39,33 @@ export const payWithVNPay = async ({
   seats
 }) => {
   try {
-    const token = localStorage.getItem("token");
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/payment`, {
+    return await createPaymentLink({
       bookingId,
       totalMoney,
-      paymentId: 1, // mặc định
-      ipAddress: "13.160.92.202", // mặc định
       cinemaRoomId,
       seats,
-      success: true // mặc định
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
+      paymentGateway: "VNPay",
+      paymentId: 1,
     });
-    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const payWithPayOS = async ({
+  bookingId,
+  totalMoney,
+  cinemaRoomId,
+  seats,
+}) => {
+  try {
+    return await createPaymentLink({
+      bookingId,
+      totalMoney,
+      cinemaRoomId,
+      seats,
+      paymentGateway: "PayOS",
+    });
   } catch (error) {
     throw error;
   }
@@ -35,7 +81,6 @@ export const confirmVNPayStatus = async ({
   selectedPromotionIds = []
 }) => {
   try {
-    const token = localStorage.getItem("token");
     const couponCode = localStorage.getItem("couponCode"); // Lấy couponCode từ localStorage
     
     const requestData = {
@@ -43,6 +88,7 @@ export const confirmVNPayStatus = async ({
       totalMoney,
       cinemaRoomId,
       seats,
+      paymentGateway: "VNPay",
       vnp_ResponseCode,
       vnp_TransactionStatus,
       selectedPromotionIds: Array.isArray(selectedPromotionIds) ? selectedPromotionIds : [],
@@ -53,8 +99,45 @@ export const confirmVNPayStatus = async ({
       requestData.couponCode = couponCode;
     }
     
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/payment/payment-status`, requestData, {
-      headers: { Authorization: `Bearer ${token}` }
+    const res = await axios.post(`${API_BASE}/payment-status`, requestData, {
+      headers: getAuthHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const confirmPayOSStatus = async ({
+  payosOrderCode,
+  payosStatus,
+  payosCode,
+  bookingId,
+  totalMoney,
+  cinemaRoomId,
+  seats,
+  selectedPromotionIds = [],
+}) => {
+  try {
+    const couponCode = localStorage.getItem("couponCode");
+    const requestData = {
+      bookingId,
+      totalMoney,
+      cinemaRoomId,
+      seats,
+      paymentGateway: "PayOS",
+      payosOrderCode,
+      payosStatus,
+      payosCode,
+      selectedPromotionIds: Array.isArray(selectedPromotionIds) ? selectedPromotionIds : [],
+    };
+
+    if (couponCode) {
+      requestData.couponCode = couponCode;
+    }
+
+    const res = await axios.post(`${API_BASE}/payment-status`, requestData, {
+      headers: getAuthHeader(),
     });
     return res.data;
   } catch (error) {
@@ -64,12 +147,11 @@ export const confirmVNPayStatus = async ({
 
 export const checkPaymentByPoints = async ({ point, totalMoney }) => {
   try {
-    const token = localStorage.getItem("token");
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/payment/pay-by-point-show`, {
+    const res = await axios.post(`${API_BASE}/pay-by-point-show`, {
       point,
       totalMoney
     }, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: getAuthHeader(),
     });
     return res.data;
   } catch (error) {
@@ -79,12 +161,11 @@ export const checkPaymentByPoints = async ({ point, totalMoney }) => {
 
 export const payByPoints = async ({ point, bookingId }) => {
   try {
-    const token = localStorage.getItem("token");
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/payment/result-pay-by-point`, {
+    const res = await axios.post(`${API_BASE}/result-pay-by-point`, {
       point,
       bookingId
     }, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: getAuthHeader(),
     });
     return res.data;
   } catch (error) {

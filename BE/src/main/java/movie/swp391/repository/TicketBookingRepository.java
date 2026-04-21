@@ -22,6 +22,8 @@ public interface TicketBookingRepository extends JpaRepository<TicketBooking, In
 
     Optional<TicketBooking> findTicketBookingByBookingID(Integer bookingID);
 
+    Optional<TicketBooking> findByPayosOrderCode(String payosOrderCode);
+
     @Query("SELECT CASE WHEN COUNT(td) > 0 THEN true ELSE false END FROM TicketDetail td JOIN td.booking b WHERE b.showtime = :showtime AND td.seat.seatName = :seatName AND b.status <> :cancelledStatus")
     boolean existsByShowtimeAndSeatNameAndStatusNot(@Param("showtime") Showtime showtime, @Param("seatName") String seatName, @Param("cancelledStatus") String cancelledStatus);
 

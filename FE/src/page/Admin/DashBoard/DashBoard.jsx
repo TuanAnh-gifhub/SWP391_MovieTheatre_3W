@@ -468,30 +468,6 @@ const DashBoard = () => {
             </Section>
           </div>
 
-          <Section title="Occupancy theo suất chiếu (Top 10)">
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-2 text-left">Phim</th>
-                    <th className="py-2 text-left">Rạp/Phòng</th>
-                    <th className="py-2 text-left">Thời gian</th>
-                    <th className="py-2 text-left">Lấp đầy</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(analytics.occupancyByShowtime || []).slice(0, 10).map((row) => (
-                    <tr key={row.showtimeId} className="border-b">
-                      <td className="py-2">{row.movieTitle}</td>
-                      <td className="py-2">{row.cinemaName} / {row.roomName}</td>
-                      <td className="py-2">{row.showDate} {row.showTime}</td>
-                      <td className="py-2">{(row.occupancyRate || 0).toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Section>
         </>
       )}
     </div>

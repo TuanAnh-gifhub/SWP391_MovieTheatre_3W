@@ -19,9 +19,13 @@ public class PaymentResultRequest {
     Double totalMoney;
     Integer cinemaRoomId;
     List<Integer> seats;
+    String paymentGateway;
     String vnp_ResponseCode;
     String vnp_TransactionStatus;
     String vpc_TxnResponseCode;
+    String payosOrderCode;
+    String payosStatus;
+    String payosCode;
     String couponCode;
     List<Integer> selectedPromotionIds;
 

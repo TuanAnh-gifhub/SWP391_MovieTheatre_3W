@@ -18,6 +18,7 @@ public class PaymentRequest {
    Integer bookingId;
     Double totalMoney;
     Integer paymentId;
+    String paymentGateway;
     String ipAddress;
     boolean isSuccess;
     Integer cinemaRoomId;
