@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
-  ComposedChart,
   BarChart,
   LineChart,
   AreaChart,
@@ -80,6 +79,7 @@ const DashBoard = () => {
   const ageData = useMemo(() => analytics?.ageGroups || [], [analytics]);
   const seatAreaData = useMemo(() => analytics?.seatAnalysis?.areaOccupancy || [], [analytics]);
   const occupancyCinemaData = useMemo(() => analytics?.occupancyByCinema || [], [analytics]);
+  const dailyFillRateData = useMemo(() => analytics?.dailyFillRate || [], [analytics]);
 
   const breakdownType = [
     { key: "revenueByGenre", label: "Doanh thu theo thể loại" },
@@ -143,7 +143,8 @@ const DashBoard = () => {
   const salesSummaryRows = useMemo(() => {
     const labels = {
       revenueByGenre: "Thể loại",
-      revenueByTicketVolume: "Nhóm vé",
+      // make label clearer for ticket-volume buckets
+      revenueByTicketVolume: "Nhóm vé (số ghế/đơn đặt)",
       revenueByCustomer: "Khách hàng",
     };
     return {
@@ -168,12 +169,12 @@ const DashBoard = () => {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
               <Wallet className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Dashboard Analytics</h1>
-              <p className="text-sm text-gray-600">Tổng quan dữ liệu bán vé và vận hành rạp</p>
-            </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Bảng điều khiển</h1>
+                <p className="text-sm text-gray-600">Tổng quan dữ liệu bán vé và vận hành rạp</p>
+              </div>
           </div>
-          <span className="text-xs px-3 py-1 rounded-full bg-pink-500 text-white self-start lg:self-auto">Real-time data</span>
+          <span className="text-xs px-3 py-1 rounded-full bg-pink-500 text-white self-start lg:self-auto">Dữ liệu thời gian thực</span>
         </div>
       </div>
 
@@ -239,26 +240,15 @@ const DashBoard = () => {
           <Section title="Phân tích doanh thu">
             <div className={`${SURFACE_CLASS} h-80`}>
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={revenueTrendData}>
-                  <defs>
-                    <linearGradient id="ticketBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0.8} />
-                    </linearGradient>
-                    <linearGradient id="foodBar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#22c55e" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#16a34a" stopOpacity={0.8} />
-                    </linearGradient>
-                  </defs>
+                <LineChart data={revenueTrendData}>
                   <CartesianGrid stroke={GRID_STROKE} strokeDasharray="4 4" vertical={false} />
                   <XAxis dataKey="label" tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
                   <YAxis tickFormatter={(v) => formatCompactNumber(v)} tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => formatCurrency(v)} />
                   <Legend wrapperStyle={LEGEND_STYLE} />
-                  <Bar dataKey="ticketRevenue" fill="url(#ticketBar)" name="Doanh thu vé" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="foodRevenue" fill="url(#foodBar)" name="Doanh thu F&B" radius={[8, 8, 0, 0]} />
-                  <Line type="monotone" dataKey="totalRevenue" stroke="#ef4444" strokeWidth={3} name="Tổng doanh thu" dot={{ r: 2 }} activeDot={{ r: 5 }} />
-                </ComposedChart>
+                  <Line type="monotone" dataKey="ticketRevenue" stroke="#3b82f6" strokeWidth={2.5} name="Doanh thu vé" dot={false} />
+                  <Line type="monotone" dataKey="foodRevenue" stroke="#16a34a" strokeWidth={2.5} name="Doanh thu F&B" dot={false} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </Section>
@@ -282,19 +272,33 @@ const DashBoard = () => {
             <Section title="Thống kê theo thể loại">
               <div className={`${SURFACE_CLASS} h-72`}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={genreData}>
+                  <BarChart data={genreData}>
                     <CartesianGrid stroke={GRID_STROKE} strokeDasharray="4 4" vertical={false} />
                     <XAxis dataKey="genre" tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
-                    <YAxis tickFormatter={(v) => formatCompactNumber(v)} tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => formatCurrency(v)} />
+                    <YAxis tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => Number(v).toLocaleString("vi-VN")} />
                     <Legend wrapperStyle={LEGEND_STYLE} />
-                    <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} name="Doanh thu" dot={{ r: 2 }} activeDot={{ r: 5 }} />
-                    <Line type="monotone" dataKey="ticketsSold" stroke="#6366f1" strokeWidth={2} name="Số vé" dot={{ r: 2 }} activeDot={{ r: 4 }} />
-                  </LineChart>
+                    <Bar dataKey="ticketsSold" name="Số vé" fill="#6366f1" radius={[8, 8, 0, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </Section>
           </div>
+
+              <Section title="Tỉ lệ lấp đầy theo ngày">
+                <div className={`${SURFACE_CLASS} h-72`}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={dailyFillRateData}>
+                      <CartesianGrid stroke={GRID_STROKE} strokeDasharray="4 4" vertical={false} />
+                      <XAxis dataKey="date" tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
+                      <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}%`} tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => `${Number(v).toFixed(1)}%`} />
+                      <Legend wrapperStyle={LEGEND_STYLE} />
+                      <Line type="monotone" dataKey="fillRate" stroke="#ef4444" strokeWidth={2.5} name="Tỉ lệ lấp đầy" dot={{ r: 2 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Section title="Phân tích độ tuổi khách hàng">
@@ -335,7 +339,7 @@ const DashBoard = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Section title="Occupancy theo rạp">
+              <Section title="Tỉ lệ lấp đầy theo rạp">
               <div className={`${SURFACE_CLASS} h-72`}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={occupancyCinemaData}>
@@ -344,7 +348,7 @@ const DashBoard = () => {
                     <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}%`} tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => `${Number(v).toFixed(1)}%`} />
                     <Legend wrapperStyle={LEGEND_STYLE} />
-                    <Bar dataKey="occupancyRate" name="Occupancy" fill="#ef4444" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="occupancyRate" name="Tỉ lệ lấp đầy" fill="#ef4444" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -353,13 +357,13 @@ const DashBoard = () => {
             <Section title="Mật độ khai thác phim trong ngày">
               <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm overflow-x-auto">
                 <div className="mb-3 text-xs text-gray-600">
-                  <span>Ngay yeu cau: </span>
+                  <span>Ngày yêu cầu: </span>
                   <span className="font-semibold text-gray-800">{densityRequestedDate}</span>
                   <span className="mx-2">|</span>
-                  <span>Ngay hien thi: </span>
+                  <span>Ngày hiển thị: </span>
                   <span className="font-semibold text-blue-700">{densityEffectiveDate}</span>
                   {densityFallbackApplied && (
-                    <span className="ml-2 text-orange-600">(da tu dong fallback ve ngay gan nhat co suat chieu)</span>
+                    <span className="ml-2 text-orange-600">(đã tự động fallback về ngày gần nhất có suất chiếu)</span>
                   )}
                 </div>
                 <table className="min-w-full text-sm">
@@ -382,7 +386,7 @@ const DashBoard = () => {
                     ) : (
                       <tr>
                         <td colSpan={3} className="py-6 text-center text-sm text-gray-500">
-                          Khong co du lieu mat do phim cho ngay da chon
+                          Không có dữ liệu mật độ phim cho ngày đã chọn
                         </td>
                       </tr>
                     )}
@@ -392,7 +396,7 @@ const DashBoard = () => {
             </Section>
           </div>
 
-          <Section title="Báo cáo kết hợp doanh thu (filter)">
+          <Section title="Báo cáo phân tích (lọc)">
             <div className="flex gap-2 mb-4 flex-wrap">
               {breakdownType.map((item) => (
                 <button
@@ -420,9 +424,12 @@ const DashBoard = () => {
             </div>
           </Section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
             <Section title="Báo cáo Sales Summary">
               <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm overflow-x-auto">
+                {activeBreakdown === 'revenueByTicketVolume' && (
+                  <div className="mb-2 text-xs text-gray-500">Nhóm vé = số ghế trong 1 đơn đặt vé (ví dụ: 2 vé = 2 ghế trong 1 đơn)</div>
+                )}
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b">
@@ -434,32 +441,11 @@ const DashBoard = () => {
                   <tbody>
                     {salesSummaryRows.rows.map((row) => (
                       <tr key={`${activeBreakdown}-${row.label}`} className="border-b">
-                        <td className="py-2">{row.label}</td>
+                        <td className="py-2">
+                          {activeBreakdown === 'revenueByTicketVolume' ? mapTicketBucketLabel(row.label) : row.label}
+                        </td>
                         <td className="py-2">{Number(row.ticketCount || 0).toLocaleString("vi-VN")}</td>
                         <td className="py-2 text-blue-600 font-semibold">{formatCurrency(row.revenue)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Section>
-
-            <Section title="Phân tích khách hàng (Top doanh thu)">
-              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="py-2 text-left">Khách hàng</th>
-                      <th className="py-2 text-left">Số vé</th>
-                      <th className="py-2 text-left">Doanh thu</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(analytics.revenueByCustomer || []).slice(0, 10).map((row) => (
-                      <tr key={`customer-${row.label}`} className="border-b">
-                        <td className="py-2">{row.label}</td>
-                        <td className="py-2">{Number(row.ticketCount || 0).toLocaleString("vi-VN")}</td>
-                        <td className="py-2 text-green-600 font-semibold">{formatCurrency(row.revenue)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -523,6 +509,23 @@ function formatCompactNumber(value) {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
   if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return num.toString();
+}
+
+function mapTicketBucketLabel(label) {
+  if (!label) return label;
+  // normalize common backend labels like "1 VE", "5+ VE"
+  const l = label.toString();
+  // 5+ case
+  if (/^5\+\s*VE$/i.test(l) || /^5\+$/i.test(l)) {
+    return `5+ vé`;
+  }
+  // numeric case like "1 VE" or "2VE"
+  const m = l.match(/^(\d+)/);
+  if (m) {
+    return `${m[1]} vé`;
+  }
+  // fallback: replace VE -> vé
+  return l.replace(/VE/i, "vé").replace(/\s+/g, " ");
 }
 
 export default DashBoard;

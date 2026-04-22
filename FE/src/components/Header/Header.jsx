@@ -572,24 +572,6 @@ const Header = () => {
                 </button>
               )}
             </div>
-            {/* Điểm - luôn nằm ngoài cùng bên phải nếu đã đăng nhập */}
-            {userProfile && (
-              <div className="flex flex-col items-center ml-1 md:ml-2 min-w-[50px] md:min-w-[70px]">
-                <div className="flex items-center justify-center">
-                  {userProfile.rankImage && userProfile.rankImage !== "Không có xếp hạng" && (
-                    <img
-                      src={userProfile.rankImage}
-                      alt={userProfile.rank}
-                      className="w-5 h-5 md:w-7 md:h-7 object-contain rounded-full border bg-white mr-1 md:mr-2 border-[#ff7120]"
-                    />
-                  )}
-                  <span className="text-[10px] md:text-xs font-bold text-[#00c9a7] drop-shadow-lg">{userProfile.rank}</span>
-                </div>
-                <span className="text-[10px] md:text-xs font-semibold mt-1 text-black">
-                  Điểm: <span className="font-bold text-[#00c9a7]">{userProfile.scores ?? 0}</span>
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </header>

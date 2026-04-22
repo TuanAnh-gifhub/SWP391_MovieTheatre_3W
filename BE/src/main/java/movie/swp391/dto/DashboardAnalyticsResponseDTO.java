@@ -27,6 +27,8 @@ public class DashboardAnalyticsResponseDTO {
     private List<RevenueBreakdownItemDTO> revenueByGenre;
     private List<RevenueBreakdownItemDTO> revenueByTicketVolume;
     private List<RevenueBreakdownItemDTO> revenueByCustomer;
+    // Tỷ lệ lấp đầy theo ngày (mỗi phần tử: date, fillRate(0..100))
+    private List<DailyFillRateItemDTO> dailyFillRate;
 
     @Data
     @NoArgsConstructor
@@ -165,6 +167,15 @@ public class DashboardAnalyticsResponseDTO {
         private String label;
         private Long ticketCount;
         private Double revenue;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class DailyFillRateItemDTO {
+        private String date; // yyyy-MM-dd
+        private Double fillRate; // percentage 0..100
     }
 }
 

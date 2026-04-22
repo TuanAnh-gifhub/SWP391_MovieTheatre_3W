@@ -161,6 +161,7 @@ public class DashboardService {
         List<GenreAnalyticsItemDTO> genreAnalysis = buildGenreAnalysis(startDate, endDate);
         List<TimeSlotAnalyticsItemDTO> timeSlotAnalysis = buildTimeSlotAnalysis(startDate, endDate);
         SeatAnalyticsDTO seatAnalysis = buildSeatAnalysis(start, end);
+        List<DailyFillRateItemDTO> dailyFillRate = buildDailyFillRate(startDate, endDate);
         List<OccupancyShowtimeItemDTO> occupancyByShowtime = buildOccupancyByShowtime(startDate, endDate);
         List<OccupancyCinemaItemDTO> occupancyByCinema = buildOccupancyByCinema(occupancyByShowtime);
         List<AgeGroupAnalyticsItemDTO> ageGroups = buildAgeGroupAnalysis(start, end);
@@ -184,6 +185,7 @@ public class DashboardService {
                 .revenueByGenre(revenueByGenre)
                 .revenueByTicketVolume(revenueByTicketVolume)
                 .revenueByCustomer(revenueByCustomer)
+                .dailyFillRate(dailyFillRate)
                 .build();
     }
 
@@ -430,6 +432,7 @@ public class DashboardService {
     }
 
     private SeatAnalyticsDTO buildSeatAnalysis(LocalDateTime start, LocalDateTime end) {
+        // Aggregate by zone/area instead of individual seat
         List<Object[]> seatRows = em.createQuery(
                         "SELECT s.seatID, s.seatName, s.seatType, s.row, s.column, " +
                                 "SUM(CASE WHEN LOWER(tb.status) = 'success' THEN 1 ELSE 0 END) " +
@@ -442,43 +445,98 @@ public class DashboardService {
                 .setParameter("end", end)
                 .getResultList();
 
-        List<SeatStatItemDTO> all = new ArrayList<>();
         Map<String, Long> totalSeatsByArea = new HashMap<>();
         Map<String, Long> soldSeatsByArea = new HashMap<>();
 
         for (Object[] row : seatRows) {
-            Integer seatId = asInt(row[0]);
-            String seatName = row[1] == null ? "Unknown" : row[1].toString();
             String seatType = row[2] == null ? "STANDARD" : row[2].toString();
             Integer col = row[4] == null ? null : asInt(row[4]);
             Long booked = asLong(row[5]);
 
             String area = classifySeatArea(seatType, col);
-            all.add(SeatStatItemDTO.builder()
-                    .seatId(seatId)
-                    .seatName(seatName)
-                    .seatType(seatType)
-                    .area(area)
-                    .bookedCount(booked)
-                    .build());
 
+            // count total seats per area (each seat row represents one seat)
             totalSeatsByArea.put(area, totalSeatsByArea.getOrDefault(area, 0L) + 1);
             soldSeatsByArea.put(area, soldSeatsByArea.getOrDefault(area, 0L) + booked);
         }
 
-        all.sort(Comparator.comparing(SeatStatItemDTO::getBookedCount).reversed());
-        SeatStatItemDTO topSeat = all.isEmpty() ? null : all.get(0);
+        List<SeatStatItemDTO> aggregated = new ArrayList<>();
+        for (Map.Entry<String, Long> e : soldSeatsByArea.entrySet()) {
+            String area = e.getKey();
+            Long booked = e.getValue();
+            aggregated.add(SeatStatItemDTO.builder()
+                    .seatId(0)
+                    .seatName(area) // use seatName to carry zone label
+                    .seatType(area)
+                    .area(area)
+                    .bookedCount(booked)
+                    .build());
+        }
+
+        aggregated.sort(Comparator.comparing(SeatStatItemDTO::getBookedCount).reversed());
+        SeatStatItemDTO topSeat = aggregated.isEmpty() ? null : aggregated.get(0);
+
+        // Compute total seat-opportunities per area: sum over showtimes (for each showtime, number of seats in that room that belong to area)
+        // 1) seat counts per room & area
+        List<Object[]> seatCountRows = em.createQuery(
+                        "SELECT cr.cinemaRoomID, " +
+                                "CASE WHEN s.seatType = 'VIP' THEN 'VIP' WHEN s.column <= 2 OR s.column >= 10 THEN 'GOC' ELSE 'HANG_GIUA' END, " +
+                                "COUNT(s) " +
+                                "FROM Seat s JOIN s.cinemaRoom cr GROUP BY cr.cinemaRoomID, " +
+                                "CASE WHEN s.seatType = 'VIP' THEN 'VIP' WHEN s.column <= 2 OR s.column >= 10 THEN 'GOC' ELSE 'HANG_GIUA' END", Object[].class)
+                .getResultList();
+
+        Map<Integer, Map<String, Long>> seatCountPerRoom = new HashMap<>();
+        for (Object[] r : seatCountRows) {
+            Integer roomId = asInt(r[0]);
+            String area = r[1] == null ? "HANG_GIUA" : r[1].toString();
+            Long cnt = asLong(r[2]);
+            Map<String, Long> m = seatCountPerRoom.getOrDefault(roomId, new HashMap<>());
+            m.put(area, cnt);
+            seatCountPerRoom.put(roomId, m);
+        }
+
+        // 2) showtime counts per room in the range
+        java.time.LocalDate startDate = start.toLocalDate();
+        java.time.LocalDate endDate = end.toLocalDate();
+        List<Object[]> showtimeRows = em.createQuery(
+                        "SELECT s.cinemaRoom.cinemaRoomID, COUNT(s) FROM Showtime s WHERE s.date BETWEEN :start AND :end GROUP BY s.cinemaRoom.cinemaRoomID", Object[].class)
+                .setParameter("start", startDate)
+                .setParameter("end", endDate)
+                .getResultList();
+
+        Map<Integer, Long> showtimeCountByRoom = new HashMap<>();
+        for (Object[] r : showtimeRows) {
+            Integer roomId = asInt(r[0]);
+            Long cnt = asLong(r[1]);
+            showtimeCountByRoom.put(roomId, cnt);
+        }
+
+        // 3) total opportunities per area
+        Map<String, Long> totalOpportunitiesByArea = new HashMap<>();
+        for (Map.Entry<Integer, Map<String, Long>> entry : seatCountPerRoom.entrySet()) {
+            Integer roomId = entry.getKey();
+            Long showCnt = showtimeCountByRoom.getOrDefault(roomId, 0L);
+            if (showCnt == 0) continue;
+            Map<String, Long> perArea = entry.getValue();
+            for (Map.Entry<String, Long> a : perArea.entrySet()) {
+                String area = a.getKey();
+                Long seatsInRoomArea = a.getValue();
+                totalOpportunitiesByArea.put(area, totalOpportunitiesByArea.getOrDefault(area, 0L) + seatsInRoomArea * showCnt);
+            }
+        }
 
         List<AreaOccupancyItemDTO> areaStats = new ArrayList<>();
         for (Map.Entry<String, Long> entry : totalSeatsByArea.entrySet()) {
             String area = entry.getKey();
             Long totalSeats = entry.getValue();
             Long soldSeats = soldSeatsByArea.getOrDefault(area, 0L);
-            double occupancy = totalSeats == 0 ? 0.0 : (soldSeats * 100.0) / totalSeats;
+            Long opportunities = totalOpportunitiesByArea.getOrDefault(area, 0L);
+            double occupancy = opportunities == 0 ? 0.0 : (soldSeats * 100.0) / opportunities;
             areaStats.add(AreaOccupancyItemDTO.builder()
                     .area(area)
                     .bookedCount(soldSeats)
-                    .totalSeats(totalSeats)
+                    .totalSeats(opportunities) // show number of seat-opportunities
                     .occupancyRate(occupancy)
                     .build());
         }
@@ -486,9 +544,50 @@ public class DashboardService {
 
         return SeatAnalyticsDTO.builder()
                 .mostBookedSeat(topSeat)
-                .topSeats(all.stream().limit(10).toList())
+                .topSeats(aggregated.stream().limit(10).toList())
                 .areaOccupancy(areaStats)
                 .build();
+    }
+
+    private List<DailyFillRateItemDTO> buildDailyFillRate(LocalDate startDate, LocalDate endDate) {
+        // total seats per date from showtimes
+        List<Object[]> totalSeatsRows = em.createQuery(
+                        "SELECT s.date, COALESCE(SUM(s.cinemaRoom.seatQuantity),0) FROM Showtime s WHERE s.date BETWEEN :start AND :end GROUP BY s.date", Object[].class)
+                .setParameter("start", startDate)
+                .setParameter("end", endDate)
+                .getResultList();
+
+        Map<java.time.LocalDate, Long> totalSeatsByDate = new HashMap<>();
+        for (Object[] r : totalSeatsRows) {
+            java.time.LocalDate date = (java.time.LocalDate) r[0];
+            Long total = asLong(r[1]);
+            totalSeatsByDate.put(date, total);
+        }
+
+        // sold seats per date from ticket details -> booking.dateShow
+        List<Object[]> soldRows = em.createQuery(
+                        "SELECT tb.dateShow, COUNT(td.ticketDetailID) FROM TicketDetail td JOIN td.booking tb WHERE LOWER(tb.status) = 'success' AND tb.dateShow BETWEEN :start AND :end GROUP BY tb.dateShow", Object[].class)
+                .setParameter("start", startDate)
+                .setParameter("end", endDate)
+                .getResultList();
+
+        Map<java.time.LocalDate, Long> soldByDate = new HashMap<>();
+        for (Object[] r : soldRows) {
+            java.time.LocalDate date = (java.time.LocalDate) r[0];
+            Long sold = asLong(r[1]);
+            soldByDate.put(date, sold);
+        }
+
+        List<DailyFillRateItemDTO> out = new ArrayList<>();
+        java.time.LocalDate cur = startDate;
+        while (!cur.isAfter(endDate)) {
+            Long total = totalSeatsByDate.getOrDefault(cur, 0L);
+            Long sold = soldByDate.getOrDefault(cur, 0L);
+            double rate = total == 0 ? 0.0 : (sold * 100.0) / total;
+            out.add(DailyFillRateItemDTO.builder().date(cur.toString()).fillRate(rate).build());
+            cur = cur.plusDays(1);
+        }
+        return out;
     }
 
     private List<OccupancyShowtimeItemDTO> buildOccupancyByShowtime(LocalDate startDate, LocalDate endDate) {
