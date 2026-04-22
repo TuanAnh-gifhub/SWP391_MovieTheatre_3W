@@ -228,7 +228,7 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                 .phoneNumber(customer.getPhone())
                 .appliedPromotions(appliedPromotions)
                 .foodAndDrinks(foodAndDrinks)
-                .discountVip(0)
+                .discountVip(0.0)
                 .build();
 
         return new BaseResponse<>("Successfully retrieved booking confirmation", true, response);

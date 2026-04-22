@@ -14,9 +14,5 @@ public interface CustomerMapper {
     @Mapping(target = "scoreHistories", ignore = true)
     @Mapping(target = "username", source = "account.username")
     @Mapping(target = "password", source = "account.password")
-
-    @Mapping(target = "rank", source = "loyaltyTier.name")
-    @Mapping(target = "rankImage", source = "loyaltyTier.rankLink")
-    @Mapping(target = "finalScore", source = "finalScore")
     CustomerResponse toCustomerResponse(Customer customer) ;
 }

@@ -1,6 +1,7 @@
 package movie.swp391.validation;
 
 import movie.swp391.constant.PromotionConditionMeta;
+import movie.swp391.validation.PromotionConditionValidator;
 import movie.swp391.entity.Role;
 import movie.swp391.repository.RoleRepository;
 import movie.swp391.response.promotion.ConditionResponse;
@@ -87,7 +88,6 @@ public class    PromotionConditionValidatorFactory {
                 new Option("Sunday", "SUN")
         );
     }
-    // Loyalty ranks removed — return empty list
     private List<Option> loadApplicableRanks() {
         return new ArrayList<>();
     }

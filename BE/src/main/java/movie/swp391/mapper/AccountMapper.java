@@ -40,9 +40,8 @@ public interface AccountMapper {
             response.setAddress(c.getAddress());
             response.setScore(c.getScore());
             response.setUpdatedDate(c.getUpdatedDate());
-            if (c.getLoyaltyTier() != null) response.setRank(c.getLoyaltyTier().getName());
-            else response.setRank("No rank");
-            response.setRankImage(c.getLoyaltyTier() != null ? c.getLoyaltyTier().getRankLink() : "No rank image");
+            response.setRank("No rank");
+            response.setRankImage("No rank image");
             response.setPlusScore(c.getScoreHistories().stream()
                     .filter(sh -> sh.getActionType().equalsIgnoreCase("plus"))
                     .mapToInt(ScoreHistory::getAmount).sum());

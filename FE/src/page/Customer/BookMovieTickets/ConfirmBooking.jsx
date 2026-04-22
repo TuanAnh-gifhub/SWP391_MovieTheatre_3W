@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { confirmBooking } from "../../../service/bookmovieticket";
-import { checkPaymentByPoints, payByPoints, updateMemberScore } from "../../../service/payment";
+// payment service imports for pay-by-points removed
 import { toast } from "react-toastify";
 import QRCode from "react-qr-code";
 import PaymentMethod from "../Payment/PaymentMethod";
@@ -22,9 +22,7 @@ const ConfirmBooking = () => {
   const [selectPayment, setSelectPayment] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState("");
   const [discountInfo, setDiscountInfo] = useState(null);
-  const [usePointsPayment, setUsePointsPayment] = useState(false);
-  const [pointsCheckResult, setPointsCheckResult] = useState(null);
-  const [checkingPoints, setCheckingPoints] = useState(false);
+  // pay-by-points feature removed: related state removed
   const [selectedPromotionIds, setSelectedPromotionIds] = useState([]);
   const [promotionDiscount, setPromotionDiscount] = useState(0);
   // Dark mode state synced with localStorage (like LandingPage)
@@ -77,34 +75,7 @@ const ConfirmBooking = () => {
       const res = await confirmBooking(req);
       const bookingData = res.data.data;
       
-      // Nếu thanh toán bằng điểm, gọi API thanh toán bằng điểm
-      if (usePointsPayment && pointsCheckResult?.success) {
-        try {
-          const pointNeed = pointsCheckResult.result?.pointNeed || pointsCheckResult.point;
-          await payByPoints({
-            point: pointNeed,
-            bookingId: bookingData.bookingId
-          });
-          
-          // Lưu thông tin cho trang thanh toán thành công
-          localStorage.setItem("movieTitle", bookingData.movieTitle || bookingRequest.movieName || "");
-          localStorage.setItem("bookingId", bookingData.bookingId);
-          localStorage.setItem("cinemaRoomId", bookingData.cinemaRoomId || bookingRequest.cinemaRoomId);
-          localStorage.setItem("seats", JSON.stringify((bookingData.seats || []).map(s => s.seatId)));
-          localStorage.setItem("usePointsPayment", "true");
-          localStorage.setItem("pointsUsed", pointNeed.toString());
-          
-          // Chuyển thẳng đến trang thanh toán thành công
-          navigate("/payment-success");
-          return;
-        } catch (pointError) {
-          let pointMsg = pointError?.response?.data?.message || "Thanh toán bằng điểm thất bại!";
-          setApiMessage(pointMsg);
-          toast.error(pointMsg);
-          setLoading(false);
-          return;
-        }
-      }
+      // pay-by-points removed — always proceed with normal payment flow
       
       // Thanh toán thường - giữ nguyên logic cũ
       setSuccessInfo(bookingData);
@@ -115,17 +86,16 @@ const ConfirmBooking = () => {
       localStorage.setItem("cinemaRoomId", bookingData.cinemaRoomId || bookingRequest.cinemaRoomId);
       localStorage.setItem("seats", JSON.stringify((bookingData.seats || []).map(s => s.seatId)));
       // Lưu tổng tiền đã tính ở FE (finalTotal)
-      localStorage.setItem("totalMoney", finalTotal);
+              localStorage.setItem("totalMoney", finalTotal);
       
-      navigate("/payment-method", {
-        state: {
-          bookingId: bookingData.bookingId,
-          totalMoney: finalTotal, // truyền giá cuối cùng vào đây
-          cinemaRoomId: bookingData.cinemaRoomId || bookingRequest.cinemaRoomId,
-          seats: (bookingData.seats || []).map(s => s.seatId),
-          usePointsPayment, // truyền thông tin thanh toán bằng điểm
-        },
-      });
+              navigate("/payment-method", {
+                state: {
+                  bookingId: bookingData.bookingId,
+                  totalMoney: finalTotal, // truyền giá cuối cùng vào đây
+                  cinemaRoomId: bookingData.cinemaRoomId || bookingRequest.cinemaRoomId,
+                  seats: (bookingData.seats || []).map(s => s.seatId),
+                },
+              });
     } catch (err) {
       let msg =
         err?.response?.data?.message ||
@@ -148,70 +118,7 @@ const ConfirmBooking = () => {
     setLoading(false);
   };
 
-  const handlePointsPaymentSwitch = async (usePoints) => {
-    setUsePointsPayment(usePoints);
-    setPointsCheckResult(null);
-
-    if (usePoints) {
-      // Reset các state liên quan đến giảm giá/coupon/promotion
-      setDiscountInfo(null);
-      setSelectedPromotionIds([]);
-      setPromotionDiscount(0);
-      localStorage.removeItem("couponCode");
-    }
-    
-    if (usePoints) {
-      setCheckingPoints(true);
-      let userPoints = 0;
-
-      try {
-        const userStr = localStorage.getItem("user");
-        const userObj = JSON.parse(userStr);
-        if (userObj.customerID) {
-          try {
-            const resScore = await updateMemberScore(userObj.customerID);
-            userPoints = Number(resScore?.result?.scores) ?? 0;
-          } catch (err) {
-            userPoints = 0;
-          }
-        }
-        
-        const seatTotal = seats?.reduce((sum, s) => sum + (Number(s.price) || 0), 0) || 0;
-        const foodTotal = selectedFoods?.reduce((sum, f) => sum + (f.price * f.quantity), 0) || 0;
-        const finalTotal = seatTotal + foodTotal;
-        
-        const res = await checkPaymentByPoints({
-          point: userPoints,
-          totalMoney: finalTotal
-        });
-        
-        if (res.status === 200 && res.result?.isSuccess) {
-          setPointsCheckResult({
-            success: true,
-            message: res.result.message,
-            point: userPoints,
-            result: res.result 
-          });
-        } else {
-          setPointsCheckResult({
-            success: false,
-            message: res.message || "Không đủ điểm để thanh toán",
-            point: userPoints
-          });
-        }
-      } catch (error) {
-        console.log("Lỗi checkPaymentByPoints:", error, error?.response?.data);
-        setPointsCheckResult({
-          success: false,
-          message: error.response?.data?.message || "Lỗi kiểm tra điểm",
-          point: userPoints
-        });
-        
-      } finally {
-        setCheckingPoints(false);
-      }
-    }
-  };
+  // pay-by-points UI/logic removed
 
   // Helper để chuẩn hóa showTime về HH:mm:ss
   const normalizeShowTime = (timeStr) => {
@@ -361,14 +268,14 @@ const ConfirmBooking = () => {
   let discountAmount = 0;
   let finalSeatTotal = seatTotal;
 
-  // Áp dụng giảm giá VIP trước (chỉ khi không thanh toán bằng điểm)
-  if (!usePointsPayment && discountVip > 0) {
+  // Áp dụng giảm giá VIP trước
+  if (discountVip > 0) {
     finalSeatTotal = seatTotal - vipDiscountAmount;
     if (finalSeatTotal < 0) finalSeatTotal = 0;
   }
 
-  // Áp dụng các khuyến mãi khác (nếu có)
-  if (!usePointsPayment && (discountInfo?.discountAmount || promotionDiscount)) {
+
+  if ((discountInfo?.discountAmount || promotionDiscount)) {
     discountAmount = (discountInfo?.discountAmount || 0) + (promotionDiscount || 0);
     finalSeatTotal = finalSeatTotal - discountAmount;
     if (finalSeatTotal < 0) finalSeatTotal = 0;
@@ -377,10 +284,6 @@ const ConfirmBooking = () => {
     finalTotal = finalSeatTotal + foodTotal;
   }
 
-  // Nếu thanh toán bằng điểm, không áp dụng giảm giá
-  if (usePointsPayment) {
-    finalTotal = seatTotal + foodTotal;
-  }
 
   return (
     <div className="relative min-h-screen w-full">
@@ -430,30 +333,28 @@ const ConfirmBooking = () => {
           </div>
          
           {/* Mã khuyến mãi */}
-        {!usePointsPayment && (
-            <div className="mb-4 flex items-center gap-2">
-              <CouponApply
-                orderTotal={totalPrice}
-                customerId={localStorage.getItem("id")}
-                onApplySuccess={(discount) => {
-                  setDiscountInfo(discount);
-                  if (discount?.couponCode || discount?.code) {
-                    localStorage.setItem("couponCode", discount.couponCode || discount.code);
-                  }
-                }}
-                onRemoveCoupon={handleRemoveCoupon}
-              />
-              {discountInfo && (
-                <button
-                  type="button"
-                  className="px-3 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-semibold"
-                  onClick={handleRemoveCoupon}
-                >
-                  Bỏ áp dụng coupon
-                </button>
-              )}
-            </div>
-          )}
+          <div className="mb-4 flex items-center gap-2">
+            <CouponApply
+              orderTotal={totalPrice}
+              customerId={localStorage.getItem("id")}
+              onApplySuccess={(discount) => {
+                setDiscountInfo(discount);
+                if (discount?.couponCode || discount?.code) {
+                  localStorage.setItem("couponCode", discount.couponCode || discount.code);
+                }
+              }}
+              onRemoveCoupon={handleRemoveCoupon}
+            />
+            {discountInfo && (
+              <button
+                type="button"
+                className="px-3 py-2 bg-red-100 text-red-600 rounded hover:bg-red-200 text-xs font-semibold"
+                onClick={handleRemoveCoupon}
+              >
+                Bỏ áp dụng coupon
+              </button>
+            )}
+          </div>
           {/* Khuyến mãi hệ thống */}
           {(
             (confirmInfo?.date || bookingRequest?.date) &&
@@ -471,48 +372,7 @@ const ConfirmBooking = () => {
               }}
             />
           )}
-          {/* Switch thanh toán bằng điểm */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-medium text-gray-700">Thanh toán bằng điểm</span>
-                {checkingPoints && (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                    <span className="text-xs text-blue-600">Đang kiểm tra...</span>
-                  </div>
-                )}
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={usePointsPayment}
-                  onChange={(e) => handlePointsPaymentSwitch(e.target.checked)}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-            {usePointsPayment && (
-              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-700">Điểm hiện tại:</span>
-                  <span className="font-semibold text-blue-800">
-                    {pointsCheckResult?.point || "Đang tải..."} điểm
-                  </span>
-                </div>
-              </div>
-            )}
-            {pointsCheckResult && (
-              <div className={`mt-2 p-2 rounded text-sm ${
-                pointsCheckResult.success 
-                  ? 'bg-green-100 text-green-800 border border-green-200' 
-                  : 'bg-red-100 text-red-800 border border-red-200'
-              }`}>
-                {pointsCheckResult.message}
-              </div>
-            )}
-          </div>
+          {/* Pay-by-points removed */}
           {apiMessage && (
             <div className="text-center text-red-500 my-2">
               {apiMessage === "Cannot read properties of null (reading 'movieTitle')"
@@ -527,7 +387,7 @@ const ConfirmBooking = () => {
               <span className="font-semibold text-gray-700">Tổng tiền ghế:</span>
               <span className="font-bold text-blue-700">{seatTotal.toLocaleString()}đ</span>
             </div>
-            {discountVip > 0 && !usePointsPayment && (
+            {discountVip > 0 && (
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold text-gray-700">
                   Giảm giá VIP ({discountVip}%):
@@ -535,7 +395,7 @@ const ConfirmBooking = () => {
                 <span className="font-bold text-purple-600">- {vipDiscountAmount.toLocaleString()}đ</span>
               </div>
             )}
-            {discountAmount > 0 && !usePointsPayment && (
+            {discountAmount > 0 && (
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold text-gray-700">Giảm giá khuyến mãi:</span>
                 <span className="font-bold text-green-600">- {discountAmount.toLocaleString()}đ</span>
@@ -557,34 +417,21 @@ const ConfirmBooking = () => {
             </div>
             <div className="flex justify-between items-center border-t pt-2 mt-2">
               <span className="font-bold text-lg text-gray-900">Tổng cộng:</span>
-              <span className="font-extrabold text-lg text-red-600">
-                {usePointsPayment && pointsCheckResult?.success ? (
-                  <span className="text-green-700 font-bold">Thanh toán bằng {pointsCheckResult.result?.pointNeed || pointsCheckResult.point} điểm</span>
-                ) : (
-                  <>{finalTotal.toLocaleString()}đ</>
-                )}
-              </span>
+                <span className="font-extrabold text-lg text-red-600">{finalTotal.toLocaleString()}đ</span>
             </div>
-            {discountAmount > 0 && !usePointsPayment && discountInfo?.message && (
+            {discountAmount > 0 && discountInfo?.message && (
               <div className="text-blue-600 text-xs mt-1">{discountInfo?.message}</div>
             )}
           </div>
 
           <div className="flex flex-col gap-3 justify-center mt-6">
-            {(!usePointsPayment || (usePointsPayment && pointsCheckResult?.success)) && (
-              <button
-                className="w-full py-2 bg-gradient-to-r from-orange-600 to-yellow-500 hover:from-orange-500 hover:to-yellow-400 text-white text-sm rounded font-bold"
-                onClick={handleConfirm}
-                disabled={loading || checkingPoints}
-              >
-                {loading ? "Đang xác nhận..." : usePointsPayment ? "Thanh toán bằng điểm" : "Thanh toán"}
-              </button>
-            )}
-            {usePointsPayment && !pointsCheckResult?.success && pointsCheckResult && (
-              <div className="text-center text-orange-600 text-sm font-medium">
-                Vui lòng tích lũy thêm điểm hoặc chuyển sang thanh toán thường
-              </div>
-            )}
+            <button
+              className="w-full py-2 bg-gradient-to-r from-orange-600 to-yellow-500 hover:from-orange-500 hover:to-yellow-400 text-white text-sm rounded font-bold"
+              onClick={handleConfirm}
+              disabled={loading}
+            >
+              {loading ? "Đang xác nhận..." : "Thanh toán"}
+            </button>
             <button
               className="w-full py-2 bg-gray-300 hover:bg-gray-500 text-black rounded font-bold"
               onClick={() => navigate(-1)}

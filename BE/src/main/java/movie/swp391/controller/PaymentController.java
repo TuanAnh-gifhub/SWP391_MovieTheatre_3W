@@ -6,7 +6,6 @@ import lombok.experimental.FieldDefaults;
 import movie.swp391.entity.PaymentMethod;
 import movie.swp391.request.*;
 import movie.swp391.response.ApiResponse;
-import movie.swp391.response.PayByPointResponse;
 import movie.swp391.service.PaymentService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -59,34 +58,6 @@ public class PaymentController {
                 .build();
     }
 
-    @PostMapping("/pay-by-point-show")
-    @PreAuthorize("@permissionService.hasPermission(authentication, 'CREATE_PAYMENT')")
-    public ApiResponse<PayByPointResponse> showPayByPoint(@RequestBody PayByPointRequest request) {
-        return ApiResponse.<PayByPointResponse>builder()
-                .result(paymentService.payByPointsShow(request))
-                .message("Success")
-                .status(200)
-                .build();
-    }
-
-    @PostMapping("/result-pay-by-point")
-    @PreAuthorize("@permissionService.hasPermission(authentication, 'CREATE_PAYMENT')")
-    public ApiResponse<String> resultPayByPoint(@RequestBody ResultPayByPointRequest request) {
-        return ApiResponse.<String>builder()
-                .result(paymentService.resultPaymentByPoint(request))
-                .message("Success")
-                .status(200)
-                .build();
-    }
-
-    @PostMapping("/exchange-food-point")
-    @PreAuthorize("@permissionService.hasPermission(authentication, 'CREATE_PAYMENT')")
-    public ApiResponse<String> exchangeFoodPoint(@RequestBody OutOfFoodReturnPointRequest request) {
-        return ApiResponse.<String>builder()
-                .result(paymentService.exchangePointForMoneyPlus(request))
-                .message("Success")
-                .status(200)
-                .build();
-    }
+    // Pay-by-points and exchange-point endpoints removed
 }
 

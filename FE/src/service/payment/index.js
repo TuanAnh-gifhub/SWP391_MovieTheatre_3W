@@ -145,33 +145,7 @@ export const confirmPayOSStatus = async ({
   }
 };
 
-export const checkPaymentByPoints = async ({ point, totalMoney }) => {
-  try {
-    const res = await axios.post(`${API_BASE}/pay-by-point-show`, {
-      point,
-      totalMoney
-    }, {
-      headers: getAuthHeader(),
-    });
-    return res.data;
-  } catch (error) {
-    throw error;
-  }
-};
-
-export const payByPoints = async ({ point, bookingId }) => {
-  try {
-    const res = await axios.post(`${API_BASE}/result-pay-by-point`, {
-      point,
-      bookingId
-    }, {
-      headers: getAuthHeader(),
-    });
-    return res.data;
-  } catch (error) {
-    throw error;
-  }
-};
+// Pay-by-points functions removed - feature deleted
 
 export const updateMemberScore = async (customerID) => {
   try {

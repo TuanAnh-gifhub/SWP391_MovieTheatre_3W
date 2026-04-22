@@ -83,10 +83,11 @@ const PaymentSuccess = () => {
     const storedTotalMoney = Number(localStorage.getItem("totalMoney")) || totalMoney;
     const cinemaRoomId = Number(localStorage.getItem("cinemaRoomId")) || 0;
     const seats = JSON.parse(localStorage.getItem("seats") || "[]");
-    const usePointsPayment = localStorage.getItem("usePointsPayment") === "true";
-    const pointsUsed = Number(localStorage.getItem("pointsUsed")) || 0;
     const customerID = Number(localStorage.getItem("id")) || 0;
     
+    // Read optional pay-by-points flags from localStorage if present (guard against undefined)
+    const usePointsPayment = (localStorage.getItem("usePointsPayment") || "false") === "true";
+    const pointsUsed = Number(localStorage.getItem("pointsUsed") || 0);
     console.log("🔍 DEBUG - PaymentSuccess - localStorage data:", {
       storedBookingId,
       storedTotalMoney,
@@ -94,29 +95,10 @@ const PaymentSuccess = () => {
       seats,
       usePointsPayment,
       pointsUsed,
-      customerID
+      customerID,
     });
 
-    // Kiểm tra nếu là thanh toán bằng điểm
-    if (usePointsPayment && storedBookingId && storedBookingId > 0) {
-      setOrderInfo({
-        bookingId: storedBookingId,
-        totalMoney: storedTotalMoney,
-        cinemaRoomId,
-        seats,
-        pointsUsed,
-        usePointsPayment,
-        status: "Success",
-        payDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      });
-      setStatus("success");
-      setMessage("Thanh toán bằng điểm thành công!");
-      // Xóa dữ liệu localStorage sau khi thanh toán thành công
-      clearPaymentStorage();
-      localStorage.removeItem("usePointsPayment");
-      localStorage.removeItem("pointsUsed");
-      return;
-    }
+    // pay-by-points removed; fallback to normal payment flows
 
     // Validation dữ liệu cho thanh toán qua PayOS
     if (isPayOSFlow) {
@@ -314,21 +296,14 @@ const PaymentSuccess = () => {
               <div className="font-medium text-gray-600">Mã đơn hàng:</div>
               <div className="font-bold text-red-600">{orderInfo.bookingId}</div>
               
-              {orderInfo.usePointsPayment ? (
-                <>
-                  <div className="font-medium text-gray-600">Số điểm đã sử dụng:</div>
-                  <div className="font-semibold text-green-600">{orderInfo.pointsUsed} điểm</div>
-                </>
-              ) : (
-                <>
-                  <div className="font-medium text-gray-600">Số tiền:</div>
-                  <div className="font-semibold">{Number(orderInfo.totalMoney).toLocaleString()} đ</div>
-                  <div className="font-medium text-gray-600">Ngân hàng:</div>
-                  <div className="font-semibold">{orderInfo.bankCode || <span className="text-gray-400">Không có</span>}</div>
-                  <div className="font-medium text-gray-600">Loại thẻ:</div>
-                  <div className="font-semibold">{orderInfo.cardType || <span className="text-gray-400">Không có</span>}</div>
-                </>
-              )}
+                 <>
+                   <div className="font-medium text-gray-600">Số tiền:</div>
+                   <div className="font-semibold">{Number(orderInfo.totalMoney).toLocaleString()} đ</div>
+                   <div className="font-medium text-gray-600">Ngân hàng:</div>
+                   <div className="font-semibold">{orderInfo.bankCode || <span className="text-gray-400">Không có</span>}</div>
+                   <div className="font-medium text-gray-600">Loại thẻ:</div>
+                   <div className="font-semibold">{orderInfo.cardType || <span className="text-gray-400">Không có</span>}</div>
+                 </>
               
               <div className="font-medium text-gray-600">Thời gian thanh toán:</div>
               <div className="font-semibold">
