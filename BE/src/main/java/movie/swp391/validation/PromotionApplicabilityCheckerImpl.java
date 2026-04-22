@@ -43,12 +43,8 @@ public class PromotionApplicabilityCheckerImpl implements PromotionApplicability
                         if (!days.contains(day.name().substring(0, 3))) return false;
                     }
                     case "applicableRanks" -> {
-                        List<String> validRanks = (List<String>) entry.getValue();
-                        String customerRank = customer.getLoyaltyTier() != null
-                                ? customer.getLoyaltyTier().getName()
-                                : null;
-
-                        if (customerRank == null || !validRanks.contains(customerRank)) return false;
+                        // loyalty ranks removed — ignore this condition (do not block applicability based on ranks)
+                        break;
                     }
                     case "firstBooking" -> {
                         boolean requireFirstBooking = Boolean.parseBoolean(entry.getValue().toString());

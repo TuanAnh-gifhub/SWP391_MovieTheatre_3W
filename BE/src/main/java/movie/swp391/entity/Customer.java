@@ -87,9 +87,7 @@ public class Customer {
     @OneToMany(mappedBy = "customer")
     private List<CouponViewUsage> couponViewUsages;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "loyalty_tier_id")
-    private LoyaltyTier loyaltyTier;
+    // Loyalty tier removed
 
     @PrePersist
     public void onCreate() {

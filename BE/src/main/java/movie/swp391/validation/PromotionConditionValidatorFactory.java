@@ -2,7 +2,6 @@ package movie.swp391.validation;
 
 import movie.swp391.constant.PromotionConditionMeta;
 import movie.swp391.entity.Role;
-import movie.swp391.repository.LoyaltyTierRepository;
 import movie.swp391.repository.RoleRepository;
 import movie.swp391.response.promotion.ConditionResponse;
 import movie.swp391.response.promotion.Option;
@@ -88,13 +87,9 @@ public class    PromotionConditionValidatorFactory {
                 new Option("Sunday", "SUN")
         );
     }
-    @Autowired
-    private LoyaltyTierRepository loyaltyTierRepository;
-
+    // Loyalty ranks removed — return empty list
     private List<Option> loadApplicableRanks() {
-        return loyaltyTierRepository.findAll().stream()
-                .map(rank -> new Option(rank.getName(), rank.getName()))
-                .collect(Collectors.toList());
+        return new ArrayList<>();
     }
 
 }

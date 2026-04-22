@@ -46,7 +46,7 @@ public class MemberServiceImpl implements MemberService {
     private final CustomerMapper customerMapper;
     ViewScoreHistory viewScoreHistoryMapper;
     AccountMapper accountMapper;
-    LoyaltyTierRepository loyaltyTierRepository;
+    // LoyaltyTierRepository removed
 
     private static final Logger log = LoggerFactory.getLogger(MemberServiceImpl.class);
     @Override
@@ -182,29 +182,12 @@ public class MemberServiceImpl implements MemberService {
         customerRepository.save(customer);
 
 
-        List<LoyaltyTier> tiers = loyaltyTierRepository.findAllByIsActiveTrue()
-                .stream()
-                .sorted(Comparator.comparingInt(LoyaltyTier::getPointThreshold))
-                .toList();
-
-        LoyaltyTier selected = null;
-
-        for (int i = 0; i < tiers.size(); i++) {
-            LoyaltyTier current = tiers.get(i);
-            LoyaltyTier next = (i + 1 < tiers.size()) ? tiers.get(i + 1) : null;
-            if (customer.getFinalScore() >= current.getPointThreshold()
-                    && (next == null || customer.getFinalScore() < next.getPointThreshold())) {
-                selected = current;
-                break;
-            }
-        }
-
-        customer.setLoyaltyTier(selected);
+        // Loyalty tiers removed: only update scores, do not assign tiers
         customerRepository.save(customer);
         return CalculateScoreAndRankResponse.builder()
                 .scores(total)
-                .rankName(customer.getLoyaltyTier() != null ? customer.getLoyaltyTier().getName() : "Không có xếp hạng")
-                .rankImage(customer.getLoyaltyTier() != null ? customer.getLoyaltyTier().getRankLink() : "không có ảnh xếp hạng")
+                .rankName("Không có xếp hạng")
+                .rankImage("")
                 .finalScores(totalFinal)
                 .build();
     }

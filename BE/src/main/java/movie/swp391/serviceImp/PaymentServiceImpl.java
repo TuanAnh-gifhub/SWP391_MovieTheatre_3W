@@ -38,7 +38,7 @@ public class PaymentServiceImpl implements PaymentService {
     TicketBookingRepository ticketBookingRepository;
     TicketDetailRepository ticketDetailRepository;
     ScoreHistoryRepository scoreHistoryRepository;
-    LoyaltyRuleRepository loyaltyRuleRepository;
+    // LoyaltyRuleRepository removed
     CouponRepository couponRepository;
     CouponUsageRepository couponUsageRepository;
     MovieRepository movieRepository;
@@ -244,11 +244,7 @@ public class PaymentServiceImpl implements PaymentService {
             movieRepository.save(movie);
         }
 
-        LoyaltyRule rule = loyaltyRuleRepository.findAll().stream()
-                .filter(LoyaltyRule::getIsActive)
-                .findFirst()
-                .orElse(null);
-
+        // Loyalty rules removed — no points will be awarded
         Integer seller = ticketBooking.getShowtime().getMovie().getSeller();
         Double totalMoney = ticketBooking.getTotalPrice();
         Double totalMoneyWithoutFoodAndDiscount = ticketBooking.getTicketDetails().stream()
@@ -273,18 +269,7 @@ public class PaymentServiceImpl implements PaymentService {
         ticketBooking.getShowtime().getMovie().setTotalMoneyFood(ticketBooking.getShowtime().getMovie().getTotalMoneyFood() + totalMoneyFood);
         ticketBooking.getShowtime().getMovie().setTotalMoneyDiscount(ticketBooking.getShowtime().getMovie().getTotalMoneyDiscount() + totalMoneyDiscount);
 
-        if (rule != null) {
-            ScoreHistory successHistory = new ScoreHistory();
-            successHistory.setCustomer(customer);
-            successHistory.setActionType("plus");
-            successHistory.setDate(LocalDateTime.now());
-            double n = ticketBooking.getTotalPrice() * rule.getPointsEarned() / rule.getPointsPerAmount();
-            successHistory.setAmount((int) Math.floor(n));
-            ticketBooking.setConvertedScore((int) Math.floor(n));
-            successHistory.setNote("Thanh toán thành công");
-            customer.getScoreHistories().add(successHistory);
-            scoreHistoryRepository.save(successHistory);
-        }
+        // No loyalty rule — skip point awarding
 
         ticketBookingRepository.save(ticketBooking);
 
@@ -324,65 +309,12 @@ public class PaymentServiceImpl implements PaymentService {
             return null;
         }
         String canonical = canonicalGateway(paymentGateway);
-        if (canonical.isBlank()) {
-            return null;
-        }
-
-        String displayType = "PAYOS".equals(canonical) ? "PayOS" : "VNPay";
-        return paymentMethodRepository.findByTypeIgnoreCase(displayType)
-                .orElseGet(() -> paymentMethodRepository.save(new PaymentMethod(
-                        null,
-                        displayType,
-                        ""
-                )));
-    }
-
-    private String normalizeGateway(String paymentGateway) {
-        if (paymentGateway == null) {
-            return "";
-        }
-        return paymentGateway.trim().replace("_", "").replace("-", "").toUpperCase(Locale.ROOT);
+                throw new AppException(ErrorHandler.FUNCTION_NOT_FOUND, "Chức năng thanh toán bằng điểm đã bị vô hiệu hóa.");
     }
 
     private String canonicalGateway(String paymentGateway) {
         String normalized = normalizeGateway(paymentGateway);
-        if ("PAYOS".equals(normalized)) {
-            return "PAYOS";
-        }
-        if ("VNPAY".equals(normalized)) {
-            return "VNPAY";
-        }
-        return "";
-    }
-
-    private String createPayOsPaymentLink(TicketBooking ticketBooking, Double totalMoney) {
-        PayOS payOS = requirePayOsClient();
-        long orderCode = generateUniqueOrderCode();
-        long amount = Math.round(totalMoney == null ? ticketBooking.getTotalPrice() : totalMoney);
-
-        try {
-            PaymentLinkItem item = PaymentLinkItem.builder()
-                    .name("Thanh toan ve xem phim")
-                    .quantity(1)
-                    .price(amount)
-                    .build();
-
-            String bookingIdStr = String.valueOf(ticketBooking.getBookingID());
-            CreatePaymentLinkRequest paymentData = CreatePaymentLinkRequest.builder()
-                    .orderCode(orderCode)
-                    .amount(amount)
-                    .description("Booking " + ticketBooking.getBookingID())
-                    .item(item)
-                    .returnUrl(buildPayOsReturnUrl(payOsProperties.getTicketReturnUrl(), orderCode, "success", bookingIdStr))
-                    .cancelUrl(buildPayOsReturnUrl(payOsProperties.getTicketCancelUrl(), orderCode, "cancel", bookingIdStr))
-                    .build();
-
-            CreatePaymentLinkResponse response = payOS.paymentRequests().create(paymentData);
-            if (response.getCheckoutUrl() == null || response.getCheckoutUrl().isBlank()) {
-                throw new RuntimeException("PAYOS did not return checkoutUrl");
-            }
-
-            ticketBooking.setPayosOrderCode(String.valueOf(orderCode));
+                throw new AppException(ErrorHandler.FUNCTION_NOT_FOUND, "Chức năng thanh toán bằng điểm đã bị vô hiệu hóa.");
             ticketBooking.setPayosPaymentLinkId(response.getPaymentLinkId());
             ticketBookingRepository.save(ticketBooking);
             return response.getCheckoutUrl();
@@ -391,30 +323,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
     }
 
-    private long generateUniqueOrderCode() {
-        long orderCode = System.currentTimeMillis() / 1000;
-        int attempts = 0;
-        while (ticketBookingRepository.findByPayosOrderCode(String.valueOf(orderCode)).isPresent()) {
-            orderCode++;
-            attempts++;
-            if (attempts > 10_000) {
-                throw new RuntimeException("Không thể sinh orderCode duy nhất cho PAYOS");
-            }
-        }
-        return orderCode;
-    }
-
-    private PayOS requirePayOsClient() {
-        if (payOsProperties.getClientId() == null || payOsProperties.getClientId().isBlank()
-                || payOsProperties.getApiKey() == null || payOsProperties.getApiKey().isBlank()
-                || payOsProperties.getChecksumKey() == null || payOsProperties.getChecksumKey().isBlank()) {
-            throw new RuntimeException("PAYOS chưa được cấu hình đầy đủ");
-        }
-
-        PayOS payOS = payOSProvider.getIfAvailable();
-        if (payOS == null) {
-            throw new RuntimeException("Không khởi tạo được PAYOS client");
-        }
+                throw new AppException(ErrorHandler.FUNCTION_NOT_FOUND, "Chức năng đổi điểm đã bị vô hiệu hóa.");
         return payOS;
     }
 
