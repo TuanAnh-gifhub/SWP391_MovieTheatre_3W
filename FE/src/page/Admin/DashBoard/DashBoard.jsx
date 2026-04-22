@@ -76,8 +76,10 @@ const DashBoard = () => {
   const revenueTrendData = useMemo(() => analytics?.revenueTrend || [], [analytics]);
   const genreData = useMemo(() => analytics?.genreAnalysis || [], [analytics]);
   const timeSlotData = useMemo(() => analytics?.timeSlotAnalysis || [], [analytics]);
+  const timeSlotDisplayData = useMemo(() => (timeSlotData || []).map((d) => ({ ...d, slotLabel: mapTimeSlotLabel(d.slot) })), [timeSlotData]);
   const ageData = useMemo(() => analytics?.ageGroups || [], [analytics]);
   const seatAreaData = useMemo(() => analytics?.seatAnalysis?.areaOccupancy || [], [analytics]);
+  const seatAreaDisplayData = useMemo(() => (seatAreaData || []).map((d) => ({ ...d, areaLabel: mapAreaLabel(d.area) })), [seatAreaData]);
   const occupancyCinemaData = useMemo(() => analytics?.occupancyByCinema || [], [analytics]);
   const dailyFillRateData = useMemo(() => analytics?.dailyFillRate || [], [analytics]);
 
@@ -120,19 +122,59 @@ const DashBoard = () => {
     [analytics]
   );
 
+  function mapAreaLabel(label) {
+    if (!label) return label;
+    const raw = label.toString().trim();
+    // normalize: replace underscores with spaces, remove diacritics, uppercase for matching
+    const normalized = raw.replace(/_/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const map = {
+      VIP: "Vip",
+      "HANG GIUA": "Hàng giữa",
+      GOC: "Góc",
+      SANG: "Sáng",
+      CHIEU: "Chiều",
+      TOI: "Tối",
+    };
+    if (map[normalized]) return map[normalized];
+    // fallback: title case the cleaned label
+    const cleaned = raw.replace(/_/g, " ").toLowerCase();
+    return cleaned
+      .split(" ")
+      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+      .join(" ");
+  }
+
+  function mapTimeSlotLabel(label) {
+    if (!label) return label;
+    const raw = label.toString().trim();
+    const normalized = raw.replace(/_/g, " ").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    const map = {
+      SANG: "Sáng",
+      CHIEU: "Chiều",
+      TOI: "Tối",
+    };
+    if (map[normalized]) return map[normalized];
+    // fallback: title case
+    const cleaned = raw.replace(/_/g, " ").toLowerCase();
+    return cleaned
+      .split(" ")
+      .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+      .join(" ");
+  }
+
   const quickRevenueCards = useMemo(
     () => [
       { title: "Doanh thu vé", value: analytics?.kpi?.ticketRevenue, tone: "text-blue-700" },
       { title: "Doanh thu F&B", value: analytics?.kpi?.foodRevenue, tone: "text-green-700" },
       {
         title: "Ghế đặt nhiều nhất",
-        value: analytics?.seatAnalysis?.mostBookedSeat?.seatName || "-",
+        value: mapAreaLabel(analytics?.seatAnalysis?.mostBookedSeat?.seatName) || "-",
         isText: true,
         tone: "text-orange-700",
       },
       {
         title: "Khu vực lấp đầy cao nhất",
-        value: seatAreaData[0]?.area || "-",
+        value: mapAreaLabel(seatAreaData[0]?.area) || "-",
         isText: true,
         tone: "text-red-700",
       },
@@ -170,7 +212,7 @@ const DashBoard = () => {
               <Wallet className="w-5 h-5 text-white" />
             </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Bảng điều khiển</h1>
+                <h1 className="text-xl font-bold text-gray-900">Bảng thống kê</h1>
                 <p className="text-sm text-gray-600">Tổng quan dữ liệu bán vé và vận hành rạp</p>
               </div>
           </div>
@@ -257,9 +299,9 @@ const DashBoard = () => {
             <Section title="Phân tích khung giờ">
               <div className={`${SURFACE_CLASS} h-72`}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={timeSlotData}>
+                  <BarChart data={timeSlotDisplayData}>
                     <CartesianGrid stroke={GRID_STROKE} strokeDasharray="4 4" vertical={false} />
-                    <XAxis dataKey="slot" tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
+                    <XAxis dataKey="slotLabel" tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
                     <YAxis tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => Number(v).toLocaleString("vi-VN")} />
                     <Legend wrapperStyle={LEGEND_STYLE} />
@@ -325,9 +367,9 @@ const DashBoard = () => {
             <Section title="Tỷ lệ lấp đầy theo khu vực ghế">
               <div className={`${SURFACE_CLASS} h-72`}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={seatAreaData}>
+                  <BarChart data={seatAreaDisplayData}>
                     <CartesianGrid stroke={GRID_STROKE} strokeDasharray="4 4" vertical={false} />
-                    <XAxis dataKey="area" tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
+                    <XAxis dataKey="areaLabel" tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
                     <YAxis tickFormatter={(v) => `${Number(v).toFixed(0)}%`} tick={AXIS_TICK} axisLine={{ stroke: "#cbd5e1" }} tickLine={{ stroke: "#cbd5e1" }} />
                     <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => `${Number(v).toFixed(1)}%`} />
                     <Legend wrapperStyle={LEGEND_STYLE} />
@@ -380,7 +422,7 @@ const DashBoard = () => {
                         <tr key={row.movieId} className="border-b">
                           <td className="py-2">{row.movieTitle}</td>
                           <td className="py-2">{row.showCount}</td>
-                          <td className="py-2">{row.peakTimeSlot}</td>
+                          <td className="py-2">{mapTimeSlotLabel(row.peakTimeSlot)}</td>
                         </tr>
                       ))
                     ) : (
