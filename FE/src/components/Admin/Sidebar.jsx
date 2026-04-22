@@ -69,11 +69,7 @@ const Sidebar = ({ collapsed, toggleCollapsed, theme }) => {
       icon: <ApartmentOutlined />,
       label: <Link to="/admin/theater">Quản lý rạp phim</Link>,
     },
-    {
-      key: "/admin/loyalty",
-      icon: <GiftOutlined />,
-      label: <Link to="/admin/loyalty">Quản lý Xếp Hạng</Link>,
-    },
+
     {
       key: "/admin/food-and-drink",
       icon: <CoffeeOutlined />,
@@ -121,11 +117,7 @@ const Sidebar = ({ collapsed, toggleCollapsed, theme }) => {
       icon: <ApartmentOutlined />,
       label: <Link to="/admin/theater">Quản lý rạp phim</Link>,
     },
-    {
-      key: "/admin/loyalty",
-      icon: <GiftOutlined />,
-      label: <Link to="/admin/loyalty">Quản lý Xếp Hạng</Link>,
-    },
+    // Loyalty link removed (feature disabled)
     {
       key: "/admin/food-and-drink",
       icon: <CoffeeOutlined />,

@@ -9,7 +9,6 @@ import avatarMale from "../../../assets/img/avatar-male.png";
 import avatarFemale from "../../../assets/img/avatar-female.png";
 import avatarDefault from "../../../assets/img/default-avatar.png";
 import { toast } from "react-toastify";
-import { getAllLoyaltyTiers } from '../../../service/loyalty';
 import ParallaxBackground from '../LandingPage/ParallaxBackground';
 import { CiSun } from 'react-icons/ci';
 
@@ -38,7 +37,6 @@ const ProfilePage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const inputsRef = useRef([]);
-  const [loyaltyTiers, setLoyaltyTiers] = useState([]);
   // Dark mode state synced with localStorage (like LandingPage)
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const stored = localStorage.getItem('landing_dark_mode');
@@ -73,11 +71,8 @@ const ProfilePage = () => {
             phoneNumber: profile.phone || "",
             address: profile.address || "",
             avatar: avatar,
-            score: profile.score || 0,
-            finalScore: profile.finalScore || 0,
+            // loyalty-related fields removed: score, finalScore, rank, rankImage
             updatedDate: profile.updatedDate || "",
-            rank: profile.rank || "",
-            rankImage: profile.rankImage || "",
           });
         }
       }
@@ -90,13 +85,7 @@ const ProfilePage = () => {
 
   useEffect(() => {
     fetchProfile();
-    // Lấy danh sách tier
-    getAllLoyaltyTiers().then(res => {
-      if (res && res.status === 200 && Array.isArray(res.result)) {
-        // Sắp xếp theo pointThreshold tăng dần
-        setLoyaltyTiers(res.result.sort((a, b) => a.pointThreshold - b.pointThreshold));
-      }
-    });
+    // loyalty feature removed: do not fetch tiers
   }, []);
 
   useEffect(() => {
@@ -166,56 +155,7 @@ const ProfilePage = () => {
 
   const isConfirmMismatch = confirmPassword && newPassword !== confirmPassword;
 
-  // Xác định tier hiện tại theo backend (rank) và chỉ highlight tier đang bật (isActive)
-  const activeTiers = loyaltyTiers.filter(tier => tier.isActive !== false);
-  const currentTier = activeTiers.find(tier => tier.name === formData?.rank) || activeTiers[0];
-  
-  // Tính toán vị trí dot dựa trên vị trí thực tế của các tier
-  const calculateDotPosition = () => {
-    if (!formData?.finalScore || activeTiers.length === 0) return 0;
-    
-    const userScore = formData.finalScore;
-    const maxScore = activeTiers[activeTiers.length - 1]?.pointThreshold || 1;
-    
-    // Nếu user đã đạt tier cao nhất
-    if (userScore >= maxScore) return 100;
-    
-    // Tìm tier hiện tại và tier tiếp theo
-    let currentTierIndex = -1;
-    let nextTierIndex = -1;
-    
-    for (let i = 0; i < activeTiers.length; i++) {
-      if (userScore >= activeTiers[i].pointThreshold) {
-        currentTierIndex = i;
-      } else {
-        nextTierIndex = i;
-        break;
-      }
-    }
-    
-    // Nếu user chưa đạt tier nào
-    if (currentTierIndex === -1) {
-      const firstTierScore = activeTiers[0]?.pointThreshold || 0;
-      return Math.min((userScore / firstTierScore) * (100 / activeTiers.length), 100 / activeTiers.length);
-    }
-    
-    // Nếu user đã đạt tier cao nhất
-    if (nextTierIndex === -1) return 100;
-    
-    // Tính toán vị trí dựa trên tier hiện tại và tier tiếp theo
-    const currentTierScore = activeTiers[currentTierIndex].pointThreshold;
-    const nextTierScore = activeTiers[nextTierIndex].pointThreshold;
-    
-    // Vị trí bắt đầu của tier hiện tại (theo index)
-    const currentTierPosition = (currentTierIndex / (activeTiers.length - 1)) * 100;
-    const nextTierPosition = (nextTierIndex / (activeTiers.length - 1)) * 100;
-    
-    // Tính tỷ lệ progress trong khoảng giữa 2 tier
-    const progressInRange = (userScore - currentTierScore) / (nextTierScore - currentTierScore);
-    
-    // Vị trí cuối cùng
-    return currentTierPosition + (progressInRange * (nextTierPosition - currentTierPosition));
-  };
+  // Loyalty/rank UI removed: no client-side rank/tier calculations
 
   return (
     <div className="relative min-h-screen w-full font-sans" style={{ fontFamily: 'Inter, Montserrat, Roboto, Arial, sans-serif' }}>
@@ -264,12 +204,9 @@ const ProfilePage = () => {
             </div>
             {/* Tên */}
             <div className="flex flex-col items-center w-full min-w-0 overflow-x-auto mb-1">
-              <div className="flex items-center justify-center w-full min-w-0">
-                <span className="break-all w-full min-w-0 text-lg font-extrabold text-gray-900 text-center">{formData?.fullName || ""}</span>
-                {formData?.rankImage && (
-                  <img src={formData.rankImage} alt={formData.rank} className="w-6 h-6 object-contain ml-1" />
-                )}
-              </div>
+                <div className="flex items-center justify-center w-full min-w-0">
+                  <span className="break-all w-full min-w-0 text-lg font-extrabold text-gray-900 text-center">{formData?.fullName || ""}</span>
+                </div>
             </div>
                          {/* Email */}
              <div className="flex flex-col items-center w-full min-w-0 overflow-x-auto mb-1">
@@ -277,76 +214,7 @@ const ProfilePage = () => {
                  <span className="break-all w-full min-w-0 text-gray-500 text-sm text-center">{formData?.email || ""}</span>
                </div>
              </div>
-             {/* Xếp hạng */}
-             <div className="flex flex-col items-center w-full min-w-0 overflow-x-auto mb-1">
-               <div className="flex items-center justify-center w-full min-w-0">
-                 <span className="font-semibold text-[#FF7120] text-sm break-all w-full min-w-0 text-center">{formData?.rank}</span>
-               </div>
-             </div>
-                         <div className="flex flex-col items-center mb-3 w-full px-4">
-               <span className="text-xs text-gray-400 mb-1">Điểm xếp hạng</span>
-               {/* Thanh xếp hạng động - thiết kế lại */}
-               <div className="relative w-full flex flex-col items-center">
-                                 {/* Các mốc tier phía trên thanh */}
-                 <div className="flex w-full justify-between mb-1 relative z-10 overflow-x-auto rank-tier-container -mx-2">
-                   {activeTiers.map((tier, idx) => {
-                     const isCurrent = tier.id === currentTier?.id;
-                     return (
-                       <div key={tier.id} className="flex flex-col items-center flex-shrink-0 rank-tier-item" style={{ width: `${100 / activeTiers.length}%`, minWidth: '40px' }}>
-                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold mb-1 transition-all duration-200 ${isCurrent ? 'bg-[#FF7120] border-[#FF7120] text-white scale-110 shadow' : 'bg-white border-gray-300 text-[#FF7120]'}`}>{idx+1}</div>
-                       </div>
-                     );
-                   })}
-                 </div>
-                                 {/* Thanh tiến trình */}
-                 <div className="relative w-full h-4 flex items-center -mx-2">
-                   <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-3 bg-gray-200 rounded-full overflow-hidden">
-                     <div
-                         className="h-3 rounded-full bg-gradient-to-r from-[#FF7120] to-[#fbbf24] transition-all duration-700"
-                       style={{ width: activeTiers.length > 0 && formData?.finalScore !== undefined ? `${calculateDotPosition()}%` : '0%' }}
-                     ></div>
-                   
-                     {/* Vị trí user hiện tại (dot) */}
-                     {formData?.finalScore !== undefined && activeTiers.length > 0 && (
-                       <div
-                         className="absolute top-1/2 -translate-y-1/2"
-                         style={{ left: `${calculateDotPosition()}%`, transform: 'translate(-50%, -50%)' }}
-                       >
-                         <div className="w-4 h-4 bg-[#FF7120] rounded-full border-2 border-white shadow"></div>
-                       </div>
-                     )}
-                   </div>
-                 </div>
-                                  {/* Tên tier và điểm mốc phía dưới thanh */}
-                 <div className="flex w-full justify-between mt-1 relative z-10 overflow-x-auto rank-tier-container -mx-2">
-                   {activeTiers.map((tier, idx) => {
-                     const isCurrent = tier.id === currentTier?.id;
-                     return (
-                       <div key={tier.id} className="flex flex-col items-center flex-shrink-0 text-center rank-tier-item" style={{ width: `${100 / activeTiers.length}%`, minWidth: '40px' }}>
-                         <div className={`text-xs font-semibold truncate w-full px-1 rank-tier-text ${isCurrent ? 'text-[#FF7120]' : 'text-gray-700'}`} title={tier.name}>{tier.name}</div>
-                       <div className="text-[10px] text-gray-500 truncate w-full px-1 rank-tier-points" title={`${tier.pointThreshold} điểm`}>{tier.pointThreshold} điểm</div>
-                       {tier.discountPercent > 0 && (
-                         <div className="text-[10px] text-green-600 font-semibold truncate w-full px-1 rank-tier-discount" title={`Giảm ${tier.discountPercent}%`}>Giảm {tier.discountPercent}%</div>
-                       )}
-                     </div>
-                   );
-                 })}
-                 </div>
-                {/* Điểm hiện tại căn giữa dưới thanh */}
-                <div className="w-full flex justify-center mt-2">
-                  <span className="text-base font-bold text-[#FF7120] bg-white px-3 py-1 rounded-xl shadow border border-[#FF7120]">
-                    {formData?.finalScore} / {
-                      activeTiers.length > 0 && formData?.finalScore 
-                        ? (() => {
-                            const nextTier = activeTiers.find(tier => formData.finalScore < tier.pointThreshold);
-                            return nextTier ? nextTier.pointThreshold : activeTiers[activeTiers.length-1]?.pointThreshold || 0;
-                          })()
-                        : activeTiers[activeTiers.length-1]?.pointThreshold || 0
-                    }
-                  </span>
-                  </div>
-              </div>
-            </div>
+              {/* Rank/loyalty removed per product decision */}
             <div className="flex flex-col gap-2 w-full mt-1">
               {tabList.map(tab => (
                 <button

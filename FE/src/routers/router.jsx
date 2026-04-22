@@ -30,7 +30,6 @@ import PaymentSuccess from "../page/Customer/Payment/PaymentSuccess";
 import TheaterManagement from "../page/Admin/TheaterManagement/TheaterManagement";
 import SeatManagement from "../page/Admin/Seat/SeatManagement";
 import VoucherPage from "../page/Admin/Voucher/VoucherPage"; 
-import LoyaltyManagement from "../page/Admin/Loyalty/LoyaltyManagement";
 import FoodAndDrinkManagement from "../page/Admin/FoodAndDrink/FoodAndDrinkManagement";
 import PermissionManagement from "../page/Admin/Permission/PermissionManagement";
 import VoucherHome from "../page/Customer/LandingPage/VoucherHome";
@@ -186,10 +185,7 @@ export const router = createBrowserRouter([
         path: "vouchers", 
         element: <VoucherPage />, 
       },
-      {
-        path: "loyalty",
-        element: <LoyaltyManagement />,
-      },
+      // Loyalty admin page removed per product decision: feature disabled/removed
       {
         path: "food-and-drink",
         element: <FoodAndDrinkManagement />,

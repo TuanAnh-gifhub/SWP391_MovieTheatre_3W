@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Button, Tooltip, Modal, Switch } from "antd";
 import { EyeOutlined, KeyOutlined, InboxOutlined, SearchOutlined, UserOutlined, TrophyOutlined, CrownOutlined, TeamOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { getAllUsers, setAccountActive } from "../../../service/user-management";
-import { getAllLoyaltyTiers } from "../../../service/loyalty";
 import { toast } from "react-toastify";
 import MultiSwitch from "../Movie/Switch";
 import AssignUserRole from "../Permission/AssignUserRole";
@@ -35,17 +34,7 @@ const UserManagement = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Lấy danh sách rank
-  useEffect(() => {
-    getAllLoyaltyTiers().then(res => {
-      if (res && res.status === 200 && Array.isArray(res.result)) {
-        // Đảm bảo chỉ lấy tên rank, không phải object
-        setRanks(res.result.map(t => typeof t === 'string' ? t : t.name || ''));
-      } else {
-        showErrorToast(res?.message || "Mất kết nối server");
-      }
-    }).catch(() => showErrorToast("Mất kết nối server"));
-  }, []);
+  // Loyalty ranks removed; ranks will be populated from user data only
 
   // Đếm số user theo từng rank và tạo danh sách roles động
   useEffect(() => {
