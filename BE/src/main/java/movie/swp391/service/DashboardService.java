@@ -157,7 +157,8 @@ public class DashboardService {
 
         DashboardKpiDTO kpi = buildKpi(start, end);
         List<RevenueSplitPointDTO> revenueTrend = buildRevenueTrend(start, end, revenueGroupBy);
-        List<MovieDensityItemDTO> movieDensity = buildMovieDensity(effectiveFocusDate);
+        // Build movie density over the requested date range (startDate..endDate)
+        List<MovieDensityItemDTO> movieDensity = buildMovieDensity(startDate, endDate);
         List<GenreAnalyticsItemDTO> genreAnalysis = buildGenreAnalysis(startDate, endDate);
         List<TimeSlotAnalyticsItemDTO> timeSlotAnalysis = buildTimeSlotAnalysis(startDate, endDate);
         SeatAnalyticsDTO seatAnalysis = buildSeatAnalysis(start, end);
@@ -329,11 +330,13 @@ public class DashboardService {
                 .toList();
     }
 
-    private List<MovieDensityItemDTO> buildMovieDensity(LocalDate focusDate) {
+    // Build movie density aggregated across the provided date range (inclusive)
+    private List<MovieDensityItemDTO> buildMovieDensity(LocalDate startDate, LocalDate endDate) {
         List<Object[]> rows = em.createQuery(
-                        "SELECT s.movie.movieID, s.movie.title, s.time " +
-                                "FROM Showtime s WHERE s.date = :focusDate", Object[].class)
-                .setParameter("focusDate", focusDate)
+                        "SELECT s.movie.movieID, s.movie.title, s.time, s.date " +
+                                "FROM Showtime s WHERE s.date BETWEEN :startDate AND :endDate", Object[].class)
+                .setParameter("startDate", startDate)
+                .setParameter("endDate", endDate)
                 .getResultList();
 
         Map<Integer, String> titleByMovie = new HashMap<>();
@@ -344,7 +347,8 @@ public class DashboardService {
             Integer movieId = asInt(row[0]);
             String title = row[1] == null ? "Unknown" : row[1].toString();
             LocalTime time = (LocalTime) row[2];
-            String hourLabel = String.format("%02d:00", time.getHour());
+            // Count by hour label across the range to determine peak time slot
+            String hourLabel = time == null ? "N/A" : String.format("%02d:00", time.getHour());
 
             titleByMovie.put(movieId, title);
             countByMovie.put(movieId, countByMovie.getOrDefault(movieId, 0L) + 1);

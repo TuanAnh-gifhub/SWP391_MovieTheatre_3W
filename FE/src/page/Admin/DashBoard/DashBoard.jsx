@@ -40,7 +40,6 @@ const DashBoard = () => {
     start: fromDateDefault,
     end: toDateDefault,
     groupBy: "day",
-    focusDate: toDateDefault,
   });
 
   const [loading, setLoading] = useState(false);
@@ -195,9 +194,8 @@ const DashBoard = () => {
     };
   }, [breakdownData, activeBreakdown]);
 
-  const densityRequestedDate = analytics?.requestedFocusDate || filters.focusDate;
-  const densityEffectiveDate = analytics?.effectiveFocusDate || densityRequestedDate;
-  const densityFallbackApplied = Boolean(analytics?.focusDateFallbackApplied);
+  // Movie density is computed over the dashboard date range
+  const densityRangeLabel = `${filters.start} -> ${filters.end}`;
 
   const pageBg = theme === "dark" ? "bg-transparent" : "bg-slate-100";
 
@@ -251,15 +249,7 @@ const DashBoard = () => {
             <option value="month">Tháng</option>
           </select>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-3 shadow-sm">
-          <label className="text-sm text-gray-600">Ngày phân tích mật độ phim</label>
-          <input
-            type="date"
-            value={filters.focusDate}
-            onChange={(e) => setFilters((p) => ({ ...p, focusDate: e.target.value }))}
-            className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 bg-white"
-          />
-        </div>
+        {/* Removed: separate focusDate picker. Movie density now uses dashboard date range (Từ ngày / Đến ngày) */}
       </div>
 
       {loading && <div className="text-blue-600 font-semibold">Đang tải dữ liệu dashboard...</div>}
@@ -399,14 +389,8 @@ const DashBoard = () => {
             <Section title="Mật độ khai thác phim trong ngày">
               <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm overflow-x-auto">
                 <div className="mb-3 text-xs text-gray-600">
-                  <span>Ngày yêu cầu: </span>
-                  <span className="font-semibold text-gray-800">{densityRequestedDate}</span>
-                  <span className="mx-2">|</span>
-                  <span>Ngày hiển thị: </span>
-                  <span className="font-semibold text-blue-700">{densityEffectiveDate}</span>
-                  {densityFallbackApplied && (
-                    <span className="ml-2 text-orange-600">(đã tự động fallback về ngày gần nhất có suất chiếu)</span>
-                  )}
+                  <span>Khoảng ngày phân tích: </span>
+                  <span className="font-semibold text-gray-800">{densityRangeLabel}</span>
                 </div>
                 <table className="min-w-full text-sm">
                   <thead>
