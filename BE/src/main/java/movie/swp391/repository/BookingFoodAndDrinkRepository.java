@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface BookingFoodAndDrinkRepository extends JpaRepository<BookingFoodAndDrink, Integer> {
-    List<BookingFoodAndDrink> findByBooking_BookingDateBetweenAndBooking_Status(LocalDateTime fromDate, LocalDateTime toDate, String status);
+    List<BookingFoodAndDrink> findByBooking_BookingDateBetweenAndBooking_StatusIgnoreCase(LocalDateTime fromDate, LocalDateTime toDate, String status);
 }

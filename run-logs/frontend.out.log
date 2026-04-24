@@ -1,0 +1,15 @@
+Starting frontend on http://localhost:5173 ...
+
+> vie-education-system@0.0.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v6.3.5[39m  [2mready in [0m[1m401[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.2.4:[1m5173[22m/[39m
+[2m12:09:20 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/page/Admin/DashBoard/DashBoard.jsx, /src/index.css[22m
+[2m12:21:54 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/page/Admin/LoginAdmin/VerifyOTP.jsx[22m
+[2m12:21:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/page/Customer/Evaluate/RatingManagement.jsx[22m
+[2m12:21:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/page/Customer/LandingPage/RockPaperScissorsGame.jsx[22m
+[2m12:21:57 PM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/page/Admin/LoginAdmin/VerifyOTP.jsx[22m

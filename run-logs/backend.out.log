@@ -1,0 +1,97 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------------< movie.ojt.fpt:MovieSWP >-----------------------
+[INFO] Building MovieOJT 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.5.0:run (default-cli) > test-compile @ MovieSWP >>>
+[INFO] 
+[INFO] --- jacoco:0.8.10:prepare-agent (default) @ MovieSWP ---
+[INFO] argLine set to -javaagent:C:\\Users\\LAPTOPPC\\.m2\\repository\\org\\jacoco\\org.jacoco.agent\\0.8.10\\org.jacoco.agent-0.8.10-runtime.jar=destfile=D:\\!!!SWP3W!!!\\SWP391_MovieTheatre_3W\\BE\\target\\jacoco.exec
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ MovieSWP ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 21 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ MovieSWP ---
+[INFO] Recompiling the module because of added or removed source files.
+[INFO] Compiling 280 source files with javac [debug parameters release 17] to target\classes
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Showtime.java:[42,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/TicketBooking.java:[43,20] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Cinema.java:[41,30] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/request/promotion/PromotionDto.java:[65,20] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Movie.java:[74,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Movie.java:[80,19] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Movie.java:[82,19] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Movie.java:[84,19] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Movie.java:[86,19] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Movie.java:[89,20] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Movie.java:[92,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Permission.java:[37,33] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/response/promotion/PromotionResponse.java:[62,20] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/entity/Role.java:[47,39] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/MovieFavoriteMapper.java:[14,19] Unmapped target properties: "id, favoritedAt".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/ViewScoreHistory.java:[22,29] Unmapped target property: "movieName".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/PromotionMapper.java:[31,31] Unmapped target properties: "status, usedCount, group".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/PromotionMapper.java:[35,31] Unmapped target properties: "promotionID, usedCount, group".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/AccountMapper.java:[28,21] Unmapped target properties: "rank, rankImage, plusScore, minusScore".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/ShowTimeV2Mapper.java:[16,33] Unmapped target property: "showtimeID".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/ShowTimeV2Mapper.java:[28,47] Unmapped target property: "times".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/MovieStatusPeriodMapper.java:[14,31] Unmapped target properties: "fromDate, toDate, status". Mapping from Collection element "Movie movies" to "MovieResponse movies".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/MovieStatusPeriodMapper.java:[16,23] Unmapped target properties: "id, status, movies".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/MovieStatusPeriodMapper.java:[19,10] Unmapped target properties: "id, status, movies".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/CustomerMapper.java:[17,22] Unmapped target properties: "rank, rankImage".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/MovieMapper.java:[20,11] Unmapped target properties: "movieID, seller, autoGenre, rank, totalMoney, totalMoneyWithoutFood, totalMoneyDiscount, totalMoneyFood, buyFromScores, active, movieStatusPeriod, showtimes, numberShowtime, favoredByCustomers".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/MovieMapper.java:[22,11] Unmapped target properties: "movieID, seller, rank, totalMoney, totalMoneyWithoutFood, totalMoneyDiscount, totalMoneyFood, buyFromScores, active, movieStatusPeriod, showtimes, numberShowtime, favoredByCustomers".
+[WARNING] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/MovieMapper.java:[25,10] Unmapped target properties: "movieID, seller, autoGenre, rank, totalMoney, totalMoneyWithoutFood, totalMoneyDiscount, totalMoneyFood, buyFromScores, active, showtimes, numberShowtime, favoredByCustomers".
+[INFO] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/request/promotion/PromotionDto.java: D:\!!!SWP3W!!!\SWP391_MovieTheatre_3W\BE\src\main\java\movie\swp391\request\promotion\PromotionDto.java uses or overrides a deprecated API.
+[INFO] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/request/promotion/PromotionDto.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/PromotionMapper.java: Some input files use unchecked or unsafe operations.
+[INFO] /D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/src/main/java/movie/swp391/mapper/PromotionMapper.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ MovieSWP ---
+[INFO] skip non existing resourceDirectory D:\!!!SWP3W!!!\SWP391_MovieTheatre_3W\BE\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ MovieSWP ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.5.0:run (default-cli) < test-compile @ MovieSWP <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.5.0:run (default-cli) @ MovieSWP ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.0)
+
+2026-04-23T11:42:17.193+07:00  INFO 9664 --- [  restartedMain] movie.swp391.MovieApplication            : Starting MovieApplication using Java 24.0.1 with PID 9664 (D:\!!!SWP3W!!!\SWP391_MovieTheatre_3W\BE\target\classes started by LAPTOPPC in D:\!!!SWP3W!!!\SWP391_MovieTheatre_3W\BE)
+2026-04-23T11:42:17.199+07:00  INFO 9664 --- [  restartedMain] movie.swp391.MovieApplication            : No active profile set, falling back to 1 default profile: "default"
+2026-04-23T11:42:17.200+07:00 DEBUG 9664 --- [  restartedMain] o.s.boot.SpringApplication               : Loading source class movie.swp391.MovieApplication
+2026-04-23T11:42:17.294+07:00 DEBUG 9664 --- [  restartedMain] o.s.b.devtools.restart.ChangeableUrls    : Matching URLs for reloading : [file:/D:/!!!SWP3W!!!/SWP391_MovieTheatre_3W/BE/target/classes/]
+2026-04-23T11:42:17.295+07:00 DEBUG 9664 --- [  restartedMain] o.s.b.d.settings.DevToolsSettings        : Included patterns for restart : []
+2026-04-23T11:42:17.295+07:00 DEBUG 9664 --- [  restartedMain] o.s.b.d.settings.DevToolsSettings        : Excluded patterns for restart : [/spring-boot-starter-[\w-]+/, /spring-boot/(bin|build|out)/, /spring-boot-starter/(bin|build|out)/, /spring-boot-devtools/(bin|build|out)/, /spring-boot-actuator/(bin|build|out)/, /spring-boot-autoconfigure/(bin|build|out)/]
+2026-04-23T11:42:17.296+07:00  INFO 9664 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-04-23T11:42:17.296+07:00  INFO 9664 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-04-23T11:42:17.297+07:00 DEBUG 9664 --- [  restartedMain] ConfigServletWebServerApplicationContext : Refreshing org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@16414309
+2026-04-23T11:42:19.581+07:00 DEBUG 9664 --- [  restartedMain] ySourcesPropertyResolver$DefaultResolver : Found key 'DB_HOST' in PropertySource 'systemEnvironment' with value of type String
+2026-04-23T11:42:19.582+07:00 DEBUG 9664 --- [  restartedMain] ySourcesPropertyResolver$DefaultResolver : Found key 'DB_PORT' in PropertySource 'systemEnvironment' with value of type String
+2026-04-23T11:42:19.582+07:00 DEBUG 9664 --- [  restartedMain] ySourcesPropertyResolver$DefaultResolver : Found key 'DB_NAME' in PropertySource 'systemEnvironment' with value of type String
+2026-04-23T11:42:20.903+07:00  INFO 9664 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-04-23T11:42:20.938+07:00 DEBUG 9664 --- [  restartedMain] o.s.b.a.AutoConfigurationPackages        : @EnableAutoConfiguration was declared on a class in the package 'movie.swp391'. Automatic @Repository and @Entity scanning is enabled.
+2026-04-23T11:42:21.347+07:00  INFO 9664 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 426 ms. Found 32 JPA repository interfaces.
+2026-04-23T11:42:22.762+07:00 DEBUG 9664 --- [  restartedMain] .s.b.w.e.t.TomcatServletWebServerFactory : Code archive: C:\Users\LAPTOPPC\.m2\repository\org\springframework\boot\spring-boot\3.5.0\spring-boot-3.5.0.jar
+2026-04-23T11:42:22.763+07:00 DEBUG 9664 --- [  restartedMain] .s.b.w.e.t.TomcatServletWebServerFactory : Code archive: C:\Users\LAPTOPPC\.m2\repository\org\springframework\boot\spring-boot\3.5.0\spring-boot-3.5.0.jar
+2026-04-23T11:42:22.765+07:00 DEBUG 9664 --- [  restartedMain] .s.b.w.e.t.TomcatServletWebServerFactory : None of the document roots [src/main/webapp, public, static] point to a directory and will be ignored.
+2026-04-23T11:42:23.272+07:00  INFO 9664 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-04-23T11:42:23.305+07:00  INFO 9664 --- [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-23T11:42:23.306+07:00  INFO 9664 --- [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.41]
+2026-04-23T11:42:23.442+07:00  INFO 9664 --- [  restartedMain] o.a.c.c.C.[.[.[/api/v1/movie_theatre]    : Initializing Spring embedded WebApplicationContext
+2026-04-23T11:42:23.443+07:00 DEBUG 9664 --- [  restartedMain] w.s.c.ServletWebServerApplicationContext : Published root WebApplicationContext as ServletContext attribute with name [org.springframework.web.context.WebApplicationContext.ROOT]
+2026-04-23T11:42:23.444+07:00  INFO 9664 --- [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 6147 ms

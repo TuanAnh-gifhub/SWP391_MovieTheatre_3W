@@ -38,6 +38,6 @@ public interface TicketBookingRepository extends JpaRepository<TicketBooking, In
 
     List<TicketBooking> findByStatus(String status);
 
-    List<TicketBooking> findByBookingDateBetweenAndStatus(LocalDateTime from, LocalDateTime to, String status);
+    List<TicketBooking> findByBookingDateBetweenAndStatusIgnoreCase(LocalDateTime from, LocalDateTime to, String status);
 
 }

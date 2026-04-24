@@ -4,6 +4,9 @@ export async function getSummaryByDate() {
   // Lấy token admin từ localStorage (giống cinemaroom)
   const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
   const token = adminUser.token;
+  if (!token) {
+    return { status: 401, message: "No admin token found", result: [] };
+  }
   try {
     const res = await axios.get(`${import.meta.env.VITE_API_URL}/export-movie-date/summary-by-date`, {
       headers: {
@@ -59,6 +62,9 @@ export async function downloadDashboardRevenuePdf() {
   try {
     const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
     const token = adminUser.token;
+    if (!token) {
+      return null;
+    }
     const res = await axios.get(`${import.meta.env.VITE_API_URL}/report/revenue-pdf`, {
       headers: {
         "Authorization": `Bearer ${token}`,

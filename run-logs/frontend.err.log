@@ -1,0 +1,28 @@
+Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[2m12:13:22 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/export-movie-date/summary-by-date[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+[2m12:13:22 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/sales/summary?from=2026-04-10&to=2026-04-23[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+[2m12:13:22 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/report/reports/customers?start=2026-04-10&end=2026-04-23&sortBy=totalSpent&direction=desc[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+[2m12:13:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/export-movie-date/summary-by-date[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+[2m12:13:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/sales/summary?from=2026-04-10&to=2026-04-23[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+[2m12:13:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error: /api/report/reports/customers?start=2026-04-10&end=2026-04-23&sortBy=totalSpent&direction=desc[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1139:18)
+    at afterConnectMultiple (node:net:1714:7)
+^C

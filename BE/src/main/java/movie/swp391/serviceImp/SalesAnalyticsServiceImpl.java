@@ -54,8 +54,8 @@ public class SalesAnalyticsServiceImpl implements SalesAnalyticsService {
     public List<SalesSummaryResponse> getSalesSummary(String from, String to) {
         LocalDateTime fromDate = LocalDate.parse(from).atStartOfDay();
         LocalDateTime toDate = LocalDate.parse(to).atTime(LocalTime.MAX);
-        List<TicketBooking> bookings = ticketBookingRepository.findByBookingDateBetweenAndStatus(fromDate, toDate, "success");
-        List<BookingFoodAndDrink> foodOrders = bookingFoodAndDrinkRepository.findByBooking_BookingDateBetweenAndBooking_Status(fromDate, toDate, "success");
+        List<TicketBooking> bookings = ticketBookingRepository.findByBookingDateBetweenAndStatusIgnoreCase(fromDate, toDate, "success");
+        List<BookingFoodAndDrink> foodOrders = bookingFoodAndDrinkRepository.findByBooking_BookingDateBetweenAndBooking_StatusIgnoreCase(fromDate, toDate, "success");
 
         Map<String, SalesSummaryResponse> summaryMap = new HashMap<>();
         String timeUnit = "day";
