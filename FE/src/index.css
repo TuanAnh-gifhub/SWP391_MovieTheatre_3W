@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Diamond rank and other effects remain here */
+@keyframes diamondSparkle {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.9) rotate(0deg);
+    filter: brightness(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) rotate(360deg);
+    filter: brightness(1.5);
+  }
+}
+
+@keyframes diamondGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(0, 191, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 191, 255, 0.8), 0 0 30px rgba(138, 43, 226, 0.4);
+  }
+}
+
+.diamond-sparkle {
+  animation: diamondSparkle 2.5s ease-in-out infinite, floatingSparkle 5s ease-in-out infinite;
+}
+
+.diamond-glow {
+  animation: diamondGlow 3s ease-in-out infinite;
+}
+
+@layer utilities {
+  .animate-fade-in-slide {
+    opacity: 0;
+    transform: translateY(16px);
+    animation: fadeInSlide 0.5s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+}
+@keyframes fadeInSlide {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+html, body {
+  font-family: 'Roboto Mono', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  color: #0e0e0e;
+  font-size: 16px;
+  line-height: 1.4;
+  /* background-color: #e4e4e4; */
+}
+
+/* Ẩn hoàn toàn thanh scrollbar trên mọi trình duyệt hiện đại */
+::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+html {
+  scrollbar-width: none !important; /* Firefox */
+}
+body {
+  -ms-overflow-style: none; /* IE, Edge */
+}
+
+/* Custom styles for rank display responsiveness */
+.rank-tier-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.rank-tier-container::-webkit-scrollbar {
+  display: none;
+}
+
+.rank-tier-item {
+  transition: all 0.3s ease;
+}
+
+.rank-tier-item:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive text sizing for rank display */
+@media (max-width: 640px) {
+  .rank-tier-text {
+    font-size: 0.75rem;
+  }
+  .rank-tier-points {
+    font-size: 0.625rem;
+  }
+  .rank-tier-discount {
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rank-tier-text {
+    font-size: 0.7rem;
+  }
+  .rank-tier-points {
+    font-size: 0.6rem;
+  }
+  .rank-tier-discount {
+    font-size: 0.6rem;
+  }
+}
