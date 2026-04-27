@@ -1,14 +1,12 @@
 package movie.swp391.controller;
 
 import lombok.RequiredArgsConstructor;
-import movie.swp391.request.ResetPasswordRequest;
 import movie.swp391.request.employee.EmployeeRequest;
 import movie.swp391.response.EmployeeResponse;
 import movie.swp391.response.common.BaseResponse;
 import movie.swp391.service.EmployeeService;
 import movie.swp391.repository.AccountRepository;
 import movie.swp391.entity.Account;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
@@ -59,20 +57,5 @@ public class EmployeeController {
             @RequestParam boolean active) {
 
         return ResponseEntity.ok(employeeService.setActiveStatus(id, active));
-    }
-
-    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('ADMIN')")
-    @PostMapping("/send-otp-reset-password")
-    public ResponseEntity<BaseResponse<Void>> sendEmployeeResetPasswordOtp(@RequestParam String email) {
-        return ResponseEntity.ok(employeeService.forgotEmployeePassword(email));
-    }
-
-    @PostMapping("/reset-password-with-otp")
-    public ResponseEntity<BaseResponse<Void>> resetEmployeePasswordWithOtp(@RequestBody ResetPasswordRequest request) {
-        return ResponseEntity.ok(employeeService.resetEmployeePasswordWithOtp(request));
-    }
-    @PostMapping("/forgot-password")
-    public ResponseEntity<BaseResponse<Void>> forgotEmployeePassword(@RequestParam String email) {
-        return ResponseEntity.ok(employeeService.forgotEmployeePassword(email));
     }
 } 

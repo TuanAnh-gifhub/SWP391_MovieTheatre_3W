@@ -8,18 +8,14 @@ import {
   ShoppingCartOutlined,
   GiftOutlined,
   LogoutOutlined,
-  VideoCameraOutlined,
   PlayCircleOutlined, 
-  CalendarOutlined ,
   ApartmentOutlined,
   CoffeeOutlined,
-  SafetyCertificateOutlined,
-  TeamOutlined
 } from "@ant-design/icons";
 
 const { Sider } = Layout;
 
-const Sidebar = ({ collapsed, toggleCollapsed, theme }) => {
+const Sidebar = ({ collapsed, theme }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -45,11 +41,6 @@ const Sidebar = ({ collapsed, toggleCollapsed, theme }) => {
       label: <Link to="/admin/user">Quản lý tài khoản</Link>,
     },
     {
-      key: "/admin/employees", 
-      icon: <TeamOutlined />,
-      label: <Link to="/admin/employees">Quản lý nhân viên</Link>,
-    },
-    {
       key: "/admin/ticket",
       icon: <ShoppingCartOutlined />,
       label: <Link to="/admin/ticket">Quản lý vé</Link>,
@@ -62,7 +53,7 @@ const Sidebar = ({ collapsed, toggleCollapsed, theme }) => {
     {
       key: "/admin/vouchers",
       icon: <GiftOutlined />,
-      label: <Link to="/admin/vouchers">Khuyến mãi</Link>,
+      label: <Link to="/admin/vouchers">Quản lý khuyến mãi</Link>,
     },
     {
       key: "/admin/theater",
@@ -105,7 +96,7 @@ const Sidebar = ({ collapsed, toggleCollapsed, theme }) => {
     {
       key: "/admin/vouchers",
       icon: <GiftOutlined />,
-      label: <Link to="/admin/vouchers">Khuyến mãi</Link>,
+      label: <Link to="/admin/vouchers">Quản lý khuyến mãi (Coupon)</Link>,
     },
     {
       key: "/admin/theater",

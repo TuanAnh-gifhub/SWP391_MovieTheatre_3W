@@ -19,7 +19,7 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Order(2) // Run after DataInitializer which has default order
+@Order(2)
 public class AdminInitializer implements CommandLineRunner {
 
     private final AccountRepository accountRepository;
@@ -42,7 +42,7 @@ public class AdminInitializer implements CommandLineRunner {
     protected void createAdminAccount() {
         Optional<Role> adminRole = roleRepository.findByRoleName("ADMIN");
         if (adminRole.isPresent()) {
-            // Create Account first
+
             Account account = new Account();
             account.setUsername("admin");
             String rawPassword = "Admin@123";
@@ -51,11 +51,11 @@ public class AdminInitializer implements CommandLineRunner {
             account.setActive(true);
             account.setRole(adminRole.get());
             
-            // Save the account first
+
             account = accountRepository.save(account);
             log.info("Created account with ID: {}", account.getAccountID());
             
-            // Create and save Admin profile
+
             Admin admin = new Admin();
             admin.setFullName("System Administrator");
             admin.setEmail("admin@movieojt.com");
@@ -63,7 +63,7 @@ public class AdminInitializer implements CommandLineRunner {
             admin = adminRepository.save(admin);
             log.info("Created admin profile with ID: {}", admin.getAdminID());
             
-            // Update account with admin reference
+
             account.setAdmin(admin);
             account = accountRepository.save(account);
             

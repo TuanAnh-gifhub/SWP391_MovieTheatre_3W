@@ -16,7 +16,6 @@ import MovieManagement from "../page/Admin/Movie/MovieManagement";
 import AdminMovieDetail from "../page/Admin/Movie/MovieDetail"; 
 import CalendarManagement from "../page/Admin/Calendar/CalendarManagement";
 import TicketManagement from "../page/Admin/Ticket/TicketManagement";
-import EmployeeManagement from "../page/Admin/Employees/EmployeeManagement";
 import MovieList from "../page/Customer/MoviePage/MovieList"; 
 import ShowTimeCreate from "../page/Admin/ShowTime/ShowTimeCreate";
 import ShowTimeManagement from "../page/Admin/ShowTime/ShowTimeManagement";
@@ -136,10 +135,6 @@ export const router = createBrowserRouter([
       {
         path: "user",
         element: <UserManagement />,
-      },
-      {
-        path: "employees",
-        element: <EmployeeManagement />,
       },
       {
         path: "movie",

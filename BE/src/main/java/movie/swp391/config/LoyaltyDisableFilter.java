@@ -20,14 +20,14 @@ public class LoyaltyDisableFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        // Only filter loyalty endpoints
+
         return !(path.startsWith("/api/loyalty-tier") || path.startsWith("/api/loyalty-rule"));
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Return 410 Gone with a small JSON body explaining the removal
-        response.setStatus(HttpServletResponse.SC_GONE); // 410
+
+        response.setStatus(HttpServletResponse.SC_GONE);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         String msg = "{ \"status\": 410, \"message\": \"Loyalty feature has been removed. Endpoint disabled.\" }";
         response.getWriter().write(msg);

@@ -8,8 +8,9 @@ import movie.swp391.entity.TemporaryAccount;
 import movie.swp391.entity.Customer;
 import movie.swp391.entity.Role;
 import movie.swp391.repository.AccountRepository;
-import movie.swp391.repository.CustomerRepository;
+import movie.swp391.repository.AdminRepository;
 import movie.swp391.repository.EmailVerificationTokenRepository;
+import movie.swp391.repository.EmployeeRepository;
 import movie.swp391.repository.PasswordResetTokenRepository;
 import movie.swp391.repository.TemporaryAccountRepository;
 import movie.swp391.repository.RoleRepository;
@@ -32,7 +33,8 @@ import movie.swp391.response.AssignRoleResponse;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
-    private final CustomerRepository customerRepository;
+    private final AdminRepository adminRepository;
+    private final EmployeeRepository employeeRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final EmailService emailService;
@@ -65,28 +67,41 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public BaseResponse<String> resetPassword(ResetPasswordRequest request) {
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            return new BaseResponse<>("Email is required", false, null);
+        }
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             return new BaseResponse<>("Passwords do not match", false, null);
         }
 
-        PasswordResetToken token = passwordResetTokenRepository.findByToken(request.getToken())
-                .orElse(null);
-
-        if (token == null) {
-            return new BaseResponse<>("Invalid token", false, null);
+        Account account = findAccountByEmail(request.getEmail());
+        if (account == null) {
+            return new BaseResponse<>("Email not found", false, null);
         }
 
-        if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
-            return new BaseResponse<>("Token has expired", false, null);
-        }
-
-        Account account = token.getAccount();
         account.setPassword(passwordEncoder.encode(request.getNewPassword()));
         accountRepository.save(account);
 
-        passwordResetTokenRepository.delete(token);
-
         return new BaseResponse<>("Password has been reset successfully", true, null);
+    }
+
+    private Account findAccountByEmail(String email) {
+        Account customerAccount = accountRepository.findByEmail(email).orElse(null);
+        if (customerAccount != null) {
+            return customerAccount;
+        }
+
+        var employee = employeeRepository.findByEmail(email).orElse(null);
+        if (employee != null && employee.getAccount() != null) {
+            return employee.getAccount();
+        }
+
+        var admin = adminRepository.findByEmail(email).orElse(null);
+        if (admin != null && admin.getAccount() != null) {
+            return admin.getAccount();
+        }
+
+        return null;
     }
 
     @Override
@@ -177,37 +192,6 @@ public class AccountServiceImpl implements AccountService {
         return String.format("%06d", (int) (Math.random() * 1000000));
     }
 
-    private EmailVerificationToken createEmailVerificationTokenForTemporaryAccount(TemporaryAccount tempAccount) {
-        Account account = new Account();
-        account.setUsername(tempAccount.getUsername());
-        account.setPassword(tempAccount.getPassword());
-
-        Role customerRole = roleRepository.findByRoleName("CUSTOMER")
-                .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
-        account.setRole(customerRole);
-
-        account.setActive(false);
-
-        Customer customer = new Customer();
-        customer.setEmail(tempAccount.getEmail());
-        customer.setFullName(tempAccount.getFullName());
-        customer.setDob(LocalDate.parse(tempAccount.getDateOfBirth()));
-        customer.setSex(tempAccount.getSex());
-        customer.setIdentityCard(tempAccount.getIdentityCard());
-        customer.setPhone(tempAccount.getPhoneNumber());
-        customer.setAddress(tempAccount.getAddress());
-        customer.setCreatedDate(LocalDateTime.now());
-        customer.setAccount(account);
-        account.setCustomer(customer);
-
-        account = accountRepository.save(account);
-
-        EmailVerificationToken token = new EmailVerificationToken();
-        token.setAccount(account);
-        token.setToken(generateOTP());
-        token.setExpiryDate(LocalDateTime.now().plusHours(24));
-        return emailVerificationTokenRepository.save(token);
-    }
     @Override
     @Transactional
     public BaseResponse<Void> sendResetPasswordOtp(String emailOrUsername) {

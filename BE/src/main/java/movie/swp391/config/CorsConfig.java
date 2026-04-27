@@ -22,7 +22,7 @@ public class CorsConfig {
             
             @Override
             public void addResourceHandlers(ResourceHandlerRegistry registry) {
-                // Đảm bảo static resources được xử lý đúng cách
+
                 registry.addResourceHandler("/assets/**")
                         .addResourceLocations("classpath:/static/assets/");
                 registry.addResourceHandler("/**")

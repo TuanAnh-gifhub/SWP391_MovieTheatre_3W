@@ -73,11 +73,11 @@ export const forgotPassword = async (email) => {
   }
 };
 
-// Đặt lại mật khẩu mới với OTP
-export const resetPassword = async ({ token, newPassword, confirmPassword }) => {
+// Đặt lại mật khẩu mới bằng email
+export const resetPassword = async ({ email, newPassword, confirmPassword }) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, {
-      token,
+      email,
       newPassword,
       confirmPassword,
     });
@@ -130,12 +130,12 @@ export const sendOtpResetPasswordAdmin = async (email) => {
   }
 };
 
-// Đặt lại mật khẩu mới với OTP cho admin
-export const resetPasswordAdmin = async ({ token, newPassword, confirmPassword }) => {
+// Đặt lại mật khẩu mới bằng email cho admin
+export const resetPasswordAdmin = async ({ email, newPassword, confirmPassword }) => {
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/admin/employees/reset-password-with-otp`,
-      { token, newPassword, confirmPassword }
+      `${import.meta.env.VITE_API_URL}/auth/reset-password`,
+      { email, newPassword, confirmPassword }
     );
     return response.data;
   } catch (error) {

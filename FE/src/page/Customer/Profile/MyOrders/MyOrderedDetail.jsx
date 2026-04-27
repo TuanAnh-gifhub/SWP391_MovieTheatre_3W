@@ -181,8 +181,6 @@ const MyOrderedDetail = () => {
                 ? new Date(order.bookingDate).toLocaleString("vi-VN")
                 : "Không có"}
             </div>
-            <div className="font-medium text-gray-600">Điểm quy đổi:</div>
-            <div className="font-semibold">{order.convertedScore ?? 0}</div>
 
           </div>
           {/* Lưu ý */}

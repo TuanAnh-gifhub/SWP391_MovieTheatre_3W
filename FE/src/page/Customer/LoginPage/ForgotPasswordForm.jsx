@@ -1,183 +1,73 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { toast } from "react-toastify";
-import { forgotPassword, resetPassword } from "../../../service/login";
-
-const OTP_LENGTH = 6;
+import { resetPassword } from "../../../service/login";
 
 const ForgotPasswordForm = ({ onBackToLogin }) => {
-  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(Array(OTP_LENGTH).fill(""));
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const inputsRef = useRef([]);
-
-  // Xử lý nhập từng ô OTP
-  const handleChangeOtp = (e, idx) => {
-    const value = e.target.value.replace(/[^0-9]/g, "");
-    if (!value) return;
-    const newOtp = [...otp];
-    newOtp[idx] = value[0];
-    setOtp(newOtp);
-    if (idx < OTP_LENGTH - 1 && value) {
-      inputsRef.current[idx + 1].focus();
-    }
-  };
-
-  // Xử lý phím Backspace
-  const handleKeyDownOtp = (e, idx) => {
-    if (e.key === "Backspace") {
-      if (otp[idx]) {
-        const newOtp = [...otp];
-        newOtp[idx] = "";
-        setOtp(newOtp);
-      } else if (idx > 0) {
-        inputsRef.current[idx - 1].focus();
-      }
-    }
-  };
-
-  // Xử lý dán mã OTP
-  const handlePasteOtp = (e) => {
-    const paste = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
-    if (paste.length === OTP_LENGTH) {
-      setOtp(paste.split(""));
-      inputsRef.current[OTP_LENGTH - 1].focus();
-    }
-  };
-
-  // Bước 1: Gửi OTP về email
-  const handleSendOTP = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const res = await forgotPassword(email);
-    setLoading(false);
-    if (res && res.success) {
-      toast.success("Đã gửi mã OTP về email. Vui lòng kiểm tra hộp thư!");
-      setStep(2);
-    } else {
-      toast.error(res.message || "Không thể gửi OTP. Vui lòng thử lại!");
-    }
-  };
-
-  // Bước 2: Xác thực OTP và đặt lại mật khẩu mới
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    const otpValue = otp.join("");
-    if (
-      otpValue.length !== OTP_LENGTH ||
-      !newPassword ||
-      !confirmPassword
-    ) {
-      toast.error("Vui lòng nhập đầy đủ thông tin!");
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự!");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Mật khẩu xác nhận không khớp!");
-      return;
-    }
     setLoading(true);
-    const res = await resetPassword({ token: otpValue, newPassword, confirmPassword });
+
+    const res = await resetPassword({ email, newPassword, confirmPassword });
+
     setLoading(false);
-    if (res && res.success) {
+
+    if (res && !res.error && res.success) {
       toast.success("Đặt lại mật khẩu thành công! Vui lòng đăng nhập.");
       setTimeout(() => {
         onBackToLogin();
-      }, 1500);
+      }, 1200);
     } else {
-      toast.error(res.message || "OTP không hợp lệ hoặc có lỗi!");
-      setOtp(Array(OTP_LENGTH).fill(""));
-      inputsRef.current[0]?.focus();
+      toast.error(res?.message || "Không thể đặt lại mật khẩu. Vui lòng thử lại!");
     }
   };
 
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold text-gray-900">Đặt lại mật khẩu của bạn</h2>
-      {step === 1 && (
-        <>
-          <p className="text-sm text-gray-600">
-            Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một mã OTP để đặt lại mật khẩu.
-          </p>
-          <form className="space-y-6" onSubmit={handleSendOTP}>
-            <div>
-              <input
-                type="email"
-                placeholder="Địa chỉ email"
-                className="w-full p-3 border-b border-gray-300 bg-transparent text-gray-800 focus:outline-none focus:border-gray-900 placeholder-gray-500"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full px-4 py-3 bg-black text-white text-sm font-semibold rounded-md hover:bg-gray-800 transition"
-              disabled={loading}
-            >
-              {loading ? "Đang gửi..." : "Gửi mã OTP"}
-            </button>
-          </form>
-        </>
-      )}
+      <p className="text-sm text-gray-600">
+        Nhập email và mật khẩu mới. Hệ thống sẽ cập nhật mật khẩu ngay nếu email tồn tại.
+      </p>
 
-      {step === 2 && (
-        <>
-          <p className="text-sm text-gray-600">
-            Nhập mã OTP đã gửi về email và đặt lại mật khẩu mới.
-          </p>
-          <form className="space-y-4" onSubmit={handleResetPassword}>
-            <div className="flex gap-2 mb-4" onPaste={handlePasteOtp}>
-              {otp.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => (inputsRef.current[idx] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChangeOtp(e, idx)}
-                  onKeyDown={(e) => handleKeyDownOtp(e, idx)}
-                  className="w-12 h-12 text-center text-2xl border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                  autoFocus={idx === 0}
-                  disabled={loading}
-                />
-              ))}
-            </div>
-            <input
-              type="password"
-              placeholder="Mật khẩu mới"
-              className="w-full p-3 border-b border-gray-300 bg-transparent text-gray-800 focus:outline-none focus:border-gray-900 placeholder-gray-500"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-            <input
-              type="password"
-              placeholder="Xác nhận mật khẩu mới"
-              className="w-full p-3 border-b border-gray-300 bg-transparent text-gray-800 focus:outline-none focus:border-gray-900 placeholder-gray-500"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              className="w-full px-4 py-3 bg-black text-white text-sm font-semibold rounded-md hover:bg-gray-800 transition"
-              disabled={loading || otp.join("").length !== OTP_LENGTH}
-            >
-              {loading ? "Đang đặt lại..." : "Đặt lại mật khẩu"}
-            </button>
-          </form>
-        </>
-      )}
+      <form className="space-y-4" onSubmit={handleResetPassword}>
+        <input
+          type="email"
+          placeholder="Địa chỉ email"
+          className="w-full p-3 border-b border-gray-300 bg-transparent text-gray-800 focus:outline-none focus:border-gray-900 placeholder-gray-500"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
+        />
+        <input
+          type="password"
+          placeholder="Mật khẩu mới"
+          className="w-full p-3 border-b border-gray-300 bg-transparent text-gray-800 focus:outline-none focus:border-gray-900 placeholder-gray-500"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required
+          disabled={loading}
+        />
+        <input
+          type="password"
+          placeholder="Xác nhận mật khẩu mới"
+          className="w-full p-3 border-b border-gray-300 bg-transparent text-gray-800 focus:outline-none focus:border-gray-900 placeholder-gray-500"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          className="w-full px-4 py-3 bg-black text-white text-sm font-semibold rounded-md hover:bg-gray-800 transition"
+          disabled={loading}
+        >
+          {loading ? "Đang xử lý..." : "Cập nhật mật khẩu"}
+        </button>
+      </form>
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600 mb-4">Bạn đã nhớ mật khẩu chưa?</p>

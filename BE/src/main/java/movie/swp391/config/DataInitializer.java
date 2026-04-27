@@ -14,7 +14,7 @@ import java.util.List;
 
 @Component
 @Slf4j
-@Order(1) // Run first
+@Order(1)
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired

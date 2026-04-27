@@ -1,9 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useRef, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import RegisterForm from "./RegisterForm";
 import ForgotPasswordForm from "./ForgotPasswordForm";
-import VerifyOTP from "./VerifyOTP";
 import { login } from "../../../service/login/index"; // Import API login
 import { toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Thêm dòng này vào đầu file
@@ -18,10 +16,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     password: "",
     general: "",
   });
-  const [showVerifyOTP, setShowVerifyOTP] = useState(false);
   const [showPassword, setShowPassword] = useState(false); 
   const passwordRef = useRef(null);
-  const navigate = useNavigate();
   const { setLoginVersion } = useContext(LoginVersionContext);
   const { login: authLogin } = useAuth();
 
@@ -42,16 +38,6 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
     onClose();
     setActiveForm("login");
     setErrors({ username: "", password: "", general: "" });
-  };
-
-  const handleShowVerifyOTP = () => {
-    setActiveForm(""); // Ẩn các form khác
-    setShowVerifyOTP(true);
-  };
-
-  const handleCloseVerifyOTP = () => {
-    setShowVerifyOTP(false);
-    setActiveForm("login");
   };
 
   const validateForm = () => {
@@ -166,10 +152,8 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }) => {
   if (!isOpen) return null;
 
   const renderForm = () => {
-    if (showVerifyOTP)
-      return <VerifyOTP onClose={handleCloseVerifyOTP} />;
     if (activeForm === "register")
-      return <RegisterForm onBackToLogin={() => handleFormChange("login")} onShowVerifyOTP={handleShowVerifyOTP} />;
+      return <RegisterForm onBackToLogin={() => handleFormChange("login")} />;
     if (activeForm === "forgotPassword")
       return (
         <ForgotPasswordForm onBackToLogin={() => handleFormChange("login")} />

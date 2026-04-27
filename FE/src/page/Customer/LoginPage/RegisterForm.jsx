@@ -3,9 +3,8 @@ import { useState } from "react";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { register } from "../../../service/register/index";
 import NotificationModal from "../../../components/Nofication/NotificationModal";
-import { useNavigate } from "react-router-dom"; // Thêm dòng này
 
-const RegisterForm = ({ onBackToLogin, onShowVerifyOTP }) => {
+const RegisterForm = ({ onBackToLogin }) => {
   const [registerData, setRegisterData] = useState({
     username: "",
     password: "",
@@ -29,7 +28,6 @@ const RegisterForm = ({ onBackToLogin, onShowVerifyOTP }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigate = useNavigate(); // Thêm dòng này
 
   // Kiểm tra số điện thoại hợp lệ (9-11 số)
   const isPhoneValid = /^\d{9,11}$/.test(registerData.phoneNumber);
@@ -89,7 +87,12 @@ const RegisterForm = ({ onBackToLogin, onShowVerifyOTP }) => {
           address: "",
           phoneNumber: "",
         });
-        if (onShowVerifyOTP) onShowVerifyOTP(); // Gọi mở modal Verify OTP
+        setModalInfo({
+          isOpen: true,
+          message: "Đăng ký thành công. Bạn có thể đăng nhập ngay bây giờ.",
+          type: "success"
+        });
+        if (onBackToLogin) onBackToLogin();
       } else {
         let errorMsg = typeof response === "string" ? response : response?.message || "Đăng ký thất bại!";
         if (errorMsg === "IDENTITY HAD ALREADY EXISTED") {

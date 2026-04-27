@@ -50,6 +50,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<String> register(RegisterRequest request) {
         try {
+            if (request.getPassword() == null || !request.getPassword().equals(request.getConfirmPassword())) {
+                return ResponseEntity.badRequest().body("Password and confirm password do not match");
+            }
             if (accountRepository.existsByUsername(request.getUsername())) {
                 return ResponseEntity.badRequest().body("Username already registered");
             }

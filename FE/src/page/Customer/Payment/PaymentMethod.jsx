@@ -1,19 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { payWithPayOS, payWithVNPay } from "../../../service/payment";
-import vnpayLogo from "../../../assets/img/vnpay.png";
-// import momoLogo from "../../../assets/img/momo.png";
-// import viettelpayLogo from "../../../assets/img/viettelpay.png";
-// import zalopayLogo from "../../../assets/img/zalo.png";
+import { payWithPayOS } from "../../../service/payment";
 import ParallaxBackground from '../LandingPage/ParallaxBackground';
 import { CiSun } from 'react-icons/ci';
 
 const localPaymentMethods = [
-  { key: "vnpay", name: "VNPay", img: vnpayLogo },
   { key: "payos", name: "PayOS" },
-  // { key: "momo", name: "Momo", img: momoLogo },
-  // { key: "viettelpay", name: "ViettelPay", img: viettelpayLogo },
-  // { key: "zalopay", name: "ZaloPay", img: zalopayLogo }
 ];
 
 const PaymentMethod = ({ onSelect, defaultMethod }) => {
@@ -74,10 +66,9 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
       seats: localStorage.getItem("seats")
     });
     
-    if (selected === "vnpay" || selected === "payos") {
+    if (selected === "payos") {
       try {
-        const paymentFn = selected === "vnpay" ? payWithVNPay : payWithPayOS;
-        const res = await paymentFn(paymentData);
+        const res = await payWithPayOS(paymentData);
         if (res && res.result) {
           window.location.href = res.result;
         } else {
@@ -86,7 +77,6 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
       } catch (err) {
         alert(err?.response?.data?.message || "Thanh toán thất bại!");
       }
-      return;
     }
     // ...xử lý các phương thức khác nếu có...
   };
@@ -112,11 +102,19 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
       <div className="relative z-10 flex flex-col items-center py-10 min-h-screen">
         <div className="bg-white shadow-xl rounded-xl p-8 max-w-lg w-full border border-gray-200">
           <h2 className="text-xl mb-4 text-center">Chọn phương thức thanh toán</h2>
-          <div className="grid grid-cols-2 gap-4 mb-6 items-stretch">
+          <div
+            className={`grid gap-4 mb-6 items-stretch ${
+              localPaymentMethods.length === 1
+                ? "grid-cols-1 place-items-center"
+                : "grid-cols-2"
+            }`}
+          >
             {localPaymentMethods.map((method) => (
               <button
                 key={method.key}
-                className={`flex min-h-[150px] w-full flex-col items-center justify-center border rounded-lg p-4 transition
+                className={`flex min-h-[150px] ${
+                  localPaymentMethods.length === 1 ? "w-full max-w-[240px]" : "w-full"
+                } flex-col items-center justify-center border rounded-lg p-4 transition
                   ${selected === method.key ? "border-blue-600 ring-2 ring-blue-200" : "border-gray-300"}
                   hover:border-blue-400`}
                 onClick={() => handleSelect(method.key)}
