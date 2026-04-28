@@ -16,7 +16,7 @@ public interface AccountService {
     BaseResponse<Void> sendResetPasswordOtp(String emailOrUsername);
     @Transactional
     BaseResponse<String> assignRoleToAccount(Integer accountId, Integer roleId);
-    
+
     @Transactional
     BaseResponse<AssignRoleResponse> assignRoleToAccountWithDetails(Integer accountId, Integer roleId);
 }

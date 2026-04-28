@@ -493,14 +493,7 @@ const UserManagement = () => {
                         className="flex-1 border-blue-300 text-blue-700 hover:border-blue-400 hover:text-blue-800 shadow-sm bg-gradient-to-r from-blue-100 to-indigo-100"
                       />
                     </Tooltip>
-                    <Tooltip title="Phân quyền">
-                      <Button
-                        size="small"
-                        icon={<KeyOutlined className="text-purple-600" />}
-                        onClick={e => { e.stopPropagation(); setSelectedUser(user); setDetailModalVisible(true); }}
-                        className="flex-1 border-purple-300 text-purple-700 hover:border-purple-400 hover:text-purple-800 shadow-sm bg-gradient-to-r from-purple-100 to-violet-100"
-                      />
-                    </Tooltip>
+                   
                 </div>
 
                   {/* Status Toggle */}

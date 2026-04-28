@@ -12,7 +12,7 @@ public class AppException extends RuntimeException {
     }
 
     public AppException(ErrorHandler errorCode, String customMessage) {
-        super(customMessage); // sẽ lấy message này khi gọi e.getMessage()
+        super(customMessage);
         this.errorCode = errorCode;
         this.customMessage = customMessage;
     }

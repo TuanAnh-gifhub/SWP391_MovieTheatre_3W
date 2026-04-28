@@ -39,14 +39,6 @@ public class MovieTMDBController {
                 .status(200)
                 .build();
     }
-
-
-
-
-
-
-
-
 }
 
 
