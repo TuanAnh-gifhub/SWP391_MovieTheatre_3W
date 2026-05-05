@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { payWithPayOS } from "../../../service/payment";
+import { mockSuccessPayment, payWithPayOS } from "../../../service/payment";
 import ParallaxBackground from '../LandingPage/ParallaxBackground';
 import { CiSun } from 'react-icons/ci';
 
@@ -41,6 +41,8 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
   
 
   const [selected, setSelected] = useState(defaultMethod || "");
+  const [mockLoading, setMockLoading] = useState(false);
+  const [mockError, setMockError] = useState("");
 
   // Dark mode state synced với localStorage (giống các trang khác)
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -79,6 +81,27 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
       }
     }
     // ...xử lý các phương thức khác nếu có...
+  };
+
+  const handleMockPaymentSuccess = async () => {
+    const bookingId = paymentData?.bookingId;
+    const customerId = Number(localStorage.getItem("id"));
+
+    if (!bookingId || !customerId) {
+      setMockError("Thiếu thông tin đặt vé để thanh toán thử.");
+      return;
+    }
+
+    try {
+      setMockError("");
+      setMockLoading(true);
+      await mockSuccessPayment({ bookingId, customerId });
+      navigate(`/payment-success?mock=1&orderId=${bookingId}`);
+    } catch (err) {
+      setMockError(err?.response?.data?.message || "Thanh toán thử thất bại.");
+    } finally {
+      setMockLoading(false);
+    }
   };
 
   return (
@@ -148,6 +171,17 @@ const PaymentMethod = ({ onSelect, defaultMethod }) => {
             >
               Tiếp tục
             </button>
+          </div>
+          <div className="mt-3">
+            <button
+              type="button"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition disabled:opacity-60"
+              onClick={handleMockPaymentSuccess}
+              disabled={mockLoading}
+            >
+              {mockLoading ? "Đang hoàn tất thanh toán thử..." : "Mock thanh toán thành công"}
+            </button>
+            {mockError && <p className="text-red-600 text-sm mt-2">{mockError}</p>}
           </div>
         </div>
       </div>

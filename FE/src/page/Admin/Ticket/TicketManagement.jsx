@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Table, Tag, Input, Modal, Button } from "antd";
+import { Modal, Button } from "antd";
 import { getAllBookings } from "../../../service/ticket";
 import ScanQrCode from "./ScanQrCode";
-import { InboxOutlined, SearchOutlined, QrcodeOutlined, ShoppingCartOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined, CalendarOutlined } from "@ant-design/icons";
-import { showSuccessToast, showErrorToast } from "../../../utils/toast";
+import { InboxOutlined, SearchOutlined, QrcodeOutlined, ShoppingCartOutlined, CheckCircleOutlined, CloseCircleOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import { showErrorToast } from "../../../utils/toast";
 
 const TicketManagement = () => {
-  const [loading, setLoading] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
   const [pagination, setPagination] = useState({
@@ -22,9 +21,14 @@ const TicketManagement = () => {
   const [customDateTo, setCustomDateTo] = useState("");
 
   const normalize = s => s ? s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').trim() : '';
+  const normalizeSeatType = seatType => String(seatType || '').toLowerCase();
+  const seatTypeBadgeClass = seatType => {
+    if (normalizeSeatType(seatType).includes('vip')) return 'bg-yellow-100 text-yellow-700 border border-yellow-200';
+    if (normalizeSeatType(seatType).includes('double') || normalizeSeatType(seatType).includes('doi')) return 'bg-purple-100 text-purple-700 border border-purple-200';
+    return 'bg-blue-100 text-blue-700 border border-blue-200';
+  };
 
   const fetchBookings = async () => {
-    setLoading(true);
     try {
       const res = await getAllBookings();
       if (res.data && res.data.status === 200) {
@@ -37,7 +41,6 @@ const TicketManagement = () => {
       setAllBookings([]);
       showErrorToast("Mất kết nối server");
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -99,10 +102,6 @@ const TicketManagement = () => {
   useEffect(() => {
     filterAndPaginate(1, pagination.pageSize);
   }, [allBookings, search, statusQuickFilter, dateFilter, customDateFrom, customDateTo]);
-
-  const handleTableChange = (newPagination) => {
-    filterAndPaginate(newPagination.current, newPagination.pageSize);
-  };
 
   const totalSold = allBookings.length;
   const countCancelled = allBookings.filter(b => typeof b.status === 'string' && ['cancelled', 'da huy', 'that bai', 'failed', 'huy', 'cancel'].includes(normalize(b.status))).length;
@@ -366,11 +365,7 @@ const TicketManagement = () => {
                         b.seats.map((s, i) => (
                           <span 
                             key={i} 
-                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                              s.seatType === "VIP" 
-                                ? "bg-yellow-100 text-yellow-700 border border-yellow-200" 
-                                : "bg-blue-100 text-blue-700 border border-blue-200"
-                            }`}
+                            className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${seatTypeBadgeClass(s.seatType)}`}
                           >
                             {s.seatName}
                           </span>

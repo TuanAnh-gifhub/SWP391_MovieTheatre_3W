@@ -6,13 +6,19 @@ import { handleDownloadTicket } from "./DownLoadOrdered"; // Thêm dòng này
 import ParallaxBackground from '../../LandingPage/ParallaxBackground';
 
 
-const encodeId = (id) => btoa(String(id));
 const decodeId = (str) => {
   try {
     return atob(str);
   } catch {
     return "";
   }
+};
+
+const normalizeSeatType = (seatType) => String(seatType || "").toLowerCase();
+const seatTypeBadgeClass = (seatType) => {
+  if (normalizeSeatType(seatType).includes("vip")) return "bg-yellow-100 text-yellow-700 border border-yellow-200";
+  if (normalizeSeatType(seatType).includes("double") || normalizeSeatType(seatType).includes("doi")) return "bg-purple-100 text-purple-700 border border-purple-200";
+  return "bg-blue-100 text-blue-700 border border-blue-200";
 };
 
 const MyOrderedDetail = () => {
@@ -132,7 +138,7 @@ const MyOrderedDetail = () => {
             <div className="font-semibold">
               {Array.isArray(order.seats) && order.seats.length > 0
                 ? order.seats.map((seat, i) => (
-                    <div key={i}>
+                    <div key={i} className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium mr-2 mb-2 ${seatTypeBadgeClass(seat.seatType)}`}>
                       {seat.seatName} ({seat.seatType}, {Number(seat.price).toLocaleString("vi-VN")} VNĐ)
                     </div>
                   ))

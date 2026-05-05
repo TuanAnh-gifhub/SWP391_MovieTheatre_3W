@@ -105,9 +105,9 @@ public class TicketBookingServiceImpl implements TicketBookingService {
         List<SeatSelectionResponse.SeatInfo> seatInfos = seats.stream()
                 .map(seat -> SeatSelectionResponse.SeatInfo.builder()
                         .seatName(seat.getSeatName())
-                        .seatType(seat.getSeatType())
+                        .seatType(seat.getSeatTypeLabel())
                         .isAvailable(!bookedSeatNames.contains(seat.getSeatName()) && seat.getIsAvailable())
-                        .price(seat.getPrice() != null ? seat.getPrice() : 0.0)
+                        .price(seat.getEffectivePrice())
                         .row(seat.getRow())
                         .column(seat.getColumn())
                         .status((!bookedSeatNames.contains(seat.getSeatName()) && seat.getIsAvailable()) ? "Blank" : "Occupied")
@@ -144,8 +144,8 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                 if (seat == null || !seat.getCinemaRoom().getCinemaRoomID().equals(request.getCinemaRoomId())) {
                     return new BaseResponse<>("Seat không hợp lệ hoặc không thuộc phòng chiếu này", false, null);
                 }
-                double seatPrice = seat.getPrice() != null ? seat.getPrice() : 0.0;
-                seatInfos.add(new SeatConfirmationInfo(seatId,seat.getSeatName(), seat.getSeatType(), seatPrice));
+                double seatPrice = seat.getEffectivePrice();
+                seatInfos.add(new SeatConfirmationInfo(seatId,seat.getSeatName(), seat.getSeatTypeLabel(), seatPrice));
                 totalPrice += seatPrice;
             }
         }
@@ -309,7 +309,7 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                     return new BaseResponse<>("Seat " + seat.getSeatName() + " is already booked", false, null);
                 }
                 seats.add(seat);
-                totalPrice += (seat.getPrice() != null) ? seat.getPrice() : 0.0;
+                totalPrice += seat.getEffectivePrice();
             }
         } else {
             for (String seatName : request.getSeatNames()) {
@@ -323,7 +323,7 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                     return new BaseResponse<>("Seat " + seat.getSeatName() + " is already booked", false, null);
                 }
                 seats.add(seat);
-                totalPrice += (seat.getPrice() != null) ? seat.getPrice() : 0.0;
+                totalPrice += seat.getEffectivePrice();
             }
         }
         List<BookingFoodAndDrink> bookingFoodAndDrinks = new ArrayList<>();
@@ -335,6 +335,10 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                         .orElseThrow(() -> new RuntimeException("FoodAndDrink not found: " + fdOrder.getId()));
                 BookingFoodAndDrink bookingFoodAndDrink = new BookingFoodAndDrink();
                 bookingFoodAndDrink.setFoodAndDrink(foodAndDrink);
+                bookingFoodAndDrink.setFoodName(foodAndDrink.getName());
+                bookingFoodAndDrink.setFoodType(foodAndDrink.getType());
+                bookingFoodAndDrink.setFoodImage(foodAndDrink.getImage());
+                bookingFoodAndDrink.setUnitPrice(foodAndDrink.getPrice());
                 bookingFoodAndDrink.setQuantity(fdOrder.getQuantity());
                 bookingFoodAndDrinks.add(bookingFoodAndDrink);
                 foodAndDrinkInfoList.add(new TicketBookingResponse.FoodAndDrinkInfo(
@@ -437,12 +441,16 @@ public class TicketBookingServiceImpl implements TicketBookingService {
         booking.setPromotions(selectedPromotions);
         booking.setBookingFoodAndDrinks(bookingFoodAndDrinks);
 
-        List<TicketDetail> ticketDetails = seats.stream()
+         List<TicketDetail> ticketDetails = seats.stream()
                 .map(seat -> {
                     TicketDetail detail = new TicketDetail();
                     detail.setBooking(booking);
                     detail.setSeat(seat);
-                    detail.setUnitPrice(seat.getPrice() != null ? seat.getPrice() : 0.0);
+                    detail.setUnitPrice(seat.getEffectivePrice());
+                    // Capture seat snapshot fields at booking time
+                    detail.setSeatTypeSnapshot(seat.getSeatTypeLabel());
+                    detail.setSeatRowSnapshot(seat.getRow());
+                    detail.setSeatColumnSnapshot(seat.getColumn());
                     detail.setCheckSeat("Occupied");
                     return detail;
                 })
@@ -538,7 +546,7 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                         .map(detail -> new TicketBookingResponse.SeatInfoResponse(
                                 detail.getSeat().getSeatID(),
                                 detail.getSeat().getSeatName(),
-                                detail.getSeat().getSeatType(),
+                                snapshotSeatType(detail),
                                 detail.getSeat().getStatus(),
                                 detail.getUnitPrice()
                         ))
@@ -552,14 +560,56 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                 booking.getCinemaName(),
                 booking.getBookingFoodAndDrinks() != null ? booking.getBookingFoodAndDrinks().stream()
                         .map(fd -> new TicketBookingResponse.FoodAndDrinkInfo(
-                                fd.getFoodAndDrink().getId(),
-                                fd.getFoodAndDrink().getName(),
-                                fd.getFoodAndDrink().getType(),
-                                fd.getFoodAndDrink().getPrice(),
-                                fd.getFoodAndDrink().getImage(),
+                                fd.getFoodAndDrink() != null ? fd.getFoodAndDrink().getId() : null,
+                                snapshotFoodName(fd),
+                                snapshotFoodType(fd),
+                                snapshotFoodPrice(fd),
+                                snapshotFoodImage(fd),
                                 fd.getQuantity()
                         )).collect(Collectors.toList()) : null
         );
+    }
+
+    private String snapshotFoodName(BookingFoodAndDrink bookingFoodAndDrink) {
+        if (bookingFoodAndDrink == null) {
+            return null;
+        }
+        if (bookingFoodAndDrink.getFoodName() != null && !bookingFoodAndDrink.getFoodName().isBlank()) {
+            return bookingFoodAndDrink.getFoodName();
+        }
+        return bookingFoodAndDrink.getFoodAndDrink() != null ? bookingFoodAndDrink.getFoodAndDrink().getName() : null;
+    }
+
+    private String snapshotFoodType(BookingFoodAndDrink bookingFoodAndDrink) {
+        if (bookingFoodAndDrink == null) {
+            return null;
+        }
+        if (bookingFoodAndDrink.getFoodType() != null && !bookingFoodAndDrink.getFoodType().isBlank()) {
+            return bookingFoodAndDrink.getFoodType();
+        }
+        return bookingFoodAndDrink.getFoodAndDrink() != null ? bookingFoodAndDrink.getFoodAndDrink().getType() : null;
+    }
+
+    private Double snapshotFoodPrice(BookingFoodAndDrink bookingFoodAndDrink) {
+        if (bookingFoodAndDrink == null) {
+            return 0.0;
+        }
+        if (bookingFoodAndDrink.getUnitPrice() != null) {
+            return bookingFoodAndDrink.getUnitPrice();
+        }
+        return bookingFoodAndDrink.getFoodAndDrink() != null && bookingFoodAndDrink.getFoodAndDrink().getPrice() != null
+                ? bookingFoodAndDrink.getFoodAndDrink().getPrice()
+                : 0.0;
+    }
+
+    private String snapshotFoodImage(BookingFoodAndDrink bookingFoodAndDrink) {
+        if (bookingFoodAndDrink == null) {
+            return null;
+        }
+        if (bookingFoodAndDrink.getFoodImage() != null && !bookingFoodAndDrink.getFoodImage().isBlank()) {
+            return bookingFoodAndDrink.getFoodImage();
+        }
+        return bookingFoodAndDrink.getFoodAndDrink() != null ? bookingFoodAndDrink.getFoodAndDrink().getImage() : null;
     }
 
     private TicketBookingResponsePayment mapToResponsePayment(TicketBooking booking, String paymentUrl) {
@@ -573,7 +623,7 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                 booking.getTicketDetails().stream()
                         .map(detail -> new TicketBookingResponsePayment.SeatInfoResponse(
                                 detail.getSeat().getSeatName(),
-                                detail.getSeat().getSeatType(),
+                                snapshotSeatType(detail),
                                 detail.getUnitPrice()
                         ))
                         .collect(Collectors.toList()),
@@ -591,7 +641,7 @@ public class TicketBookingServiceImpl implements TicketBookingService {
 
     private Double calculateTotalPrice(Showtime showtime, List<Seat> seats) {
         return seats.stream()
-                .mapToDouble(seat -> seat.getPrice() != null ? seat.getPrice() : 0.0)
+                .mapToDouble(Seat::getEffectivePrice)
                 .sum();
     }
 
@@ -702,9 +752,9 @@ public class TicketBookingServiceImpl implements TicketBookingService {
                     ShowTimeForCustomerResponse.SeatDTO seatDTO = new ShowTimeForCustomerResponse.SeatDTO();
                     seatDTO.setSeatID(seat.getSeatID());
                     seatDTO.setSeatName(seat.getSeatName());
-                    seatDTO.setSeatType(seat.getSeatType());
+                    seatDTO.setSeatType(seat.getSeatTypeLabel());
                     seatDTO.setIsAvailable(seat.getIsAvailable());
-                    seatDTO.setPrice(seat.getPrice());
+                    seatDTO.setPrice(seat.getEffectivePrice());
                     showtimeDTO.getSeats().add(seatDTO);
                 }
 
@@ -765,5 +815,16 @@ public class TicketBookingServiceImpl implements TicketBookingService {
             }
         }
     }
+
+    private String snapshotSeatType(TicketDetail ticketDetail) {
+        if (ticketDetail == null) {
+            return null;
+        }
+        if (ticketDetail.getSeatTypeSnapshot() != null && !ticketDetail.getSeatTypeSnapshot().isBlank()) {
+            return ticketDetail.getSeatTypeSnapshot();
+        }
+        return ticketDetail.getSeat() != null ? ticketDetail.getSeat().getSeatTypeLabel() : null;
+    }
 }
+
 

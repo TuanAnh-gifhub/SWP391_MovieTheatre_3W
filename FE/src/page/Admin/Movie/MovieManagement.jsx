@@ -666,7 +666,6 @@ const MovieManagement = () => {
                         size="small"
                         icon={<EditOutlined className="text-green-600" />}
                     onClick={e => { e.stopPropagation(); handleEdit(movie); }}
-                    disabled={movie.active}
                         className="flex-1 border-green-300 text-green-700 hover:border-green-400 hover:text-green-800 shadow-sm bg-gradient-to-r from-green-100 to-emerald-100"
                   />
                 </Tooltip>
@@ -675,7 +674,6 @@ const MovieManagement = () => {
                         size="small"
                         icon={<PlusOutlined className="text-purple-600" />}
                     onClick={e => { e.stopPropagation(); setSelectedMovieId(movie.movieID); setShowCreate(true); }}
-                    disabled={!movie.active}
                         className="flex-1 border-purple-300 text-purple-700 hover:border-purple-400 hover:text-purple-800 shadow-sm bg-gradient-to-r from-purple-100 to-violet-100"
                   />
                 </Tooltip>
@@ -684,7 +682,6 @@ const MovieManagement = () => {
                         size="small"
                         icon={<DeleteOutlined className="text-red-600" />}
                     onClick={e => { e.stopPropagation(); showDeleteConfirm(movie); }}
-                    disabled={movie.active}
                         className="flex-1 border-red-300 text-red-700 hover:border-red-400 hover:text-red-800 shadow-sm bg-gradient-to-r from-red-100 to-rose-100"
                   />
                 </Tooltip>
@@ -886,3 +883,4 @@ function InfoRow({ label, value }) {
 }
 
 export default MovieManagement;
+

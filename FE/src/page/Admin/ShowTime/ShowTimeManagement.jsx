@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { getShowtimes, deleteShowtime, onOffShowtime } from '../../../service/showtime';
 import MultiSwitch from '../Movie/Switch';
 import { Button, Tooltip, Modal } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { LeftOutlined, RightOutlined } from "@ant-design/icons";
+import { DeleteOutlined, LeftOutlined, RightOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 const weekdayLabels = ["CN", "TH 2", "TH 3", "TH 4", "TH 5", "TH 6", "TH 7"];
@@ -20,8 +19,6 @@ const ShowTimeManagement = () => {
   const [roomFilter, setRoomFilter] = useState('');
   const [centerDate, setCenterDate] = useState(dayjs());
   const [viewMode, setViewMode] = useState("week");
-  const gridRef = useRef(null);
-  const [gridWidth, setGridWidth] = useState(0);
 
   // Chuyển đổi dữ liệu lồng nhau thành mảng phẳng (thêm toTime)
   const flattenShowtimes = (data) => {
@@ -33,7 +30,7 @@ const ShowTimeManagement = () => {
             show.times.forEach(time => {
               result.push({
                 id: time.showtimeID,
-                movieTitle: time.movieTitle || '',
+                // movieTitle removed from admin list UI
                 cityName: city.cityName,
                 cinemaName: cinema.name,
                 cinemaRoom: room.roomName,
@@ -70,17 +67,6 @@ const ShowTimeManagement = () => {
     fetchShowtimes();
   }, []);
 
-  useEffect(() => {
-    if (gridRef.current) {
-      setGridWidth(gridRef.current.scrollWidth);
-    }
-    const handleResize = () => {
-      if (gridRef.current) setGridWidth(gridRef.current.scrollWidth);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [viewMode, centerDate, showtimes]);
-
   // Lấy danh sách unique cho các bộ lọc
   const cityOptions = [...new Set(showtimes.map(item => item.cityName))];
   const cinemaOptions = [...new Set(showtimes
@@ -94,7 +80,6 @@ const ShowTimeManagement = () => {
   const filteredShowtimes = showtimes.filter(item => {
     const keyword = searchText.toLowerCase();
     const matchSearch =
-      item.movieTitle.toLowerCase().includes(keyword) ||
       item.cityName.toLowerCase().includes(keyword) ||
       item.cinemaName.toLowerCase().includes(keyword) ||
       item.cinemaRoom.toLowerCase().includes(keyword) ||
@@ -179,7 +164,7 @@ const ShowTimeManagement = () => {
     
       <div className="mb-4 flex items-center gap-2">
         <input
-          placeholder="Tìm kiếm phim, rạp, thành phố, ngày, giờ..."
+          placeholder="Tìm kiếm rạp, thành phố, ngày, giờ..."
           value={searchText}
           onChange={e => setSearchText(e.target.value)}
           style={{
@@ -299,7 +284,7 @@ const ShowTimeManagement = () => {
                 >
                   Giờ
                 </th>
-                {days.map((d, idx) => (
+                {days.map((d) => (
                   <th
                     key={d.format("YYYY-MM-DD")}
                     style={{
@@ -353,9 +338,7 @@ const ShowTimeManagement = () => {
                                 color: "#222"
                               }}
                             >
-                              <div style={{ fontWeight: 600, marginBottom: 4, color: "#222" }}>
-                                {showtime.movieTitle}
-                              </div>
+                              {/* movie title removed from admin grid */}
                               <div style={{ fontSize: 12, color: "#222" }}>
                                 <div>
                                   <b>Thời gian:</b>{" "}
@@ -438,7 +421,7 @@ const ShowTimeManagement = () => {
         okButtonProps={{ danger: true }}
       >
         <p>
-          Bạn có chắc chắn muốn xóa suất chiếu cho phim "<b>{selectedShowtime?.movieTitle}</b>"?
+          Bạn có chắc chắn muốn xóa suất chiếu này?
         </p>
         <p className="text-red-500 font-medium">
           Hành động này không thể hoàn tác.

@@ -27,6 +27,8 @@ import movie.swp391.service.ShowTimeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -89,14 +91,117 @@ public class ShowTimeServiceImpl implements ShowTimeService {
     }
 
     public List<ShowTimeV1Response> getAllShowTime() {
-        List<ShowTimeV1Response> city = cityRepository.findAll().stream().map(showTimeMapper::toCityResponse).toList();
-        return city;
+        List<City> cities = cityRepository.findAllWithShowtimes();
+        log.info("Retrieved {} cities from database", cities.size());
+        
+        List<ShowTimeV1Response> responses = new ArrayList<>();
+        
+        for (City city : cities) {
+            List<Cinema> cinemas = city.getCinemas();
+            if (cinemas == null || cinemas.isEmpty()) {
+                log.debug("City {} has no cinemas", city.getName());
+                continue;
+            }
+            
+            List<ShowTimeV1Response.CinemaDTO> cinemaDTOs = new ArrayList<>();
+            for (Cinema cinema : cinemas) {
+                // Explicitly fetch cinema rooms
+                List<CinemaRoom> rooms = cinemaRoomRepository.findByCinemaCinemaID(cinema.getCinemaID());
+                if (rooms == null || rooms.isEmpty()) {
+                    log.debug("Cinema {} has no rooms", cinema.getName());
+                    continue;
+                }
+                
+                List<ShowTimeV1Response.CinemaRoomDTO> roomDTOs = new ArrayList<>();
+                for (CinemaRoom room : rooms) {
+                    // Explicitly fetch showtimes for this room
+                    List<Showtime> showtimes = showtimeRepository.findByCinemaRoom_CinemaRoomID(room.getCinemaRoomID());
+                    if (showtimes == null || showtimes.isEmpty()) {
+                        log.debug("Room {} has no showtimes", room.getRoomName());
+                        continue;
+                    }
+                    
+                    Map<LocalDate, List<Showtime>> grouped = showtimes.stream()
+                            .collect(Collectors.groupingBy(Showtime::getDate));
+                    
+                    List<ShowTimeV1Response.DateShowtimeDTO> dateShowtimeList = grouped.entrySet().stream()
+                            .map(entry -> ShowTimeV1Response.DateShowtimeDTO.builder()
+                                    .date(entry.getKey())
+                                    .times(entry.getValue().stream()
+                                            .map(showTimeMapper::toTimeWithMovieTitleDTO)
+                                            .collect(Collectors.toList()))
+                                    .build())
+                            .collect(Collectors.toList());
+                    
+                    if (!dateShowtimeList.isEmpty()) {
+                        roomDTOs.add(ShowTimeV1Response.CinemaRoomDTO.builder()
+                                .cinemaRoomID(room.getCinemaRoomID())
+                                .roomName(room.getRoomName())
+                                .showtimes(dateShowtimeList)
+                                .build());
+                    }
+                }
+                
+                if (!roomDTOs.isEmpty()) {
+                    cinemaDTOs.add(ShowTimeV1Response.CinemaDTO.builder()
+                            .cinemaID(cinema.getCinemaID())
+                            .name(cinema.getName())
+                            .cinemaRooms(roomDTOs)
+                            .build());
+                }
+            }
+            
+            if (!cinemaDTOs.isEmpty()) {
+                responses.add(ShowTimeV1Response.builder()
+                        .cityName(city.getName())
+                        .cinemas(cinemaDTOs)
+                        .build());
+                log.info("Added city {} with {} cinemas to response", city.getName(), cinemaDTOs.size());
+            } else {
+                log.debug("City {} has no cinemas with showtimes", city.getName());
+            }
+        }
+        
+        log.info("Returning {} cities with showtime data", responses.size());
+        return responses;
     }
 
+    @Transactional(readOnly = true)
     public List<Cityresponse> getALLRoomFromCity() {
-        List<Cityresponse> cities = cityRepository.findAll().stream().map(roomMapper::toCityResponse).toList();
+        // Avoid fetching two List associations in one query (City.cinemas + Cinema.cinemaRooms).
+        List<City> cities = cityRepository.findAllWithRooms();
+        for (City city : cities) {
+            if (city.getCinemas() == null) continue;
+            for (Cinema cinema : city.getCinemas()) {
+                List<CinemaRoom> rooms = cinemaRoomRepository.findByCinemaCinemaID(cinema.getCinemaID());
+                cinema.setCinemaRooms(rooms);
+            }
+        }
 
-        return cities;
+        return cities.stream().map(roomMapper::toCityResponse).toList();
+    }
+
+    @Scheduled(fixedRate = 60000)
+    @Transactional
+    public void autoDisableExpiredShowTimes() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime cutoff = now.minusMinutes(15);
+
+        List<Showtime> expiredActiveShowtimes = showtimeRepository.findAll().stream()
+                .filter(showtime -> Boolean.TRUE.equals(showtime.getActive()))
+                .filter(showtime -> {
+                    LocalDateTime showtimeDateTime = LocalDateTime.of(showtime.getDate(), showtime.getTime());
+                    return !showtimeDateTime.isAfter(cutoff);
+                })
+                .collect(Collectors.toList());
+
+        if (expiredActiveShowtimes.isEmpty()) {
+            return;
+        }
+
+        expiredActiveShowtimes.forEach(showtime -> showtime.setActive(false));
+        showtimeRepository.saveAll(expiredActiveShowtimes);
+        log.info("Auto-disabled {} expired showtimes at {}", expiredActiveShowtimes.size(), now);
     }
 
     public CreateShowTimeResponse createShowTime(CreateShowTImeRequest request) {
@@ -179,6 +284,7 @@ public class ShowTimeServiceImpl implements ShowTimeService {
                             .date(date)
                             .time(time)
                             .version(request.getVersion())
+                            .active(true)
                             .build();
                     showtimesToSave.add(showtime);
                 }
@@ -186,6 +292,7 @@ public class ShowTimeServiceImpl implements ShowTimeService {
         }
 
         showtimeRepository.saveAll(showtimesToSave);
+        movieService.syncMovieStatusPeriodByShowtimes(movie.getMovieID());
 
         return CreateShowTimeResponse.builder()
                 .createdCount(showtimesToSave.size())
@@ -341,6 +448,7 @@ public class ShowTimeServiceImpl implements ShowTimeService {
     public String updateShowTime(UpdateShowTimeRequest request) {
         Showtime existingShowtime = showtimeRepository.findById(request.getShowtimeId())
                 .orElseThrow(() -> new AppException(ErrorHandler.SHOWTIME_NOT_EXISTED));
+        Integer oldMovieId = existingShowtime.getMovie() != null ? existingShowtime.getMovie().getMovieID() : null;
 
         Movie movie = movieRepository.findById(request.getMovieId())
                 .orElseThrow(() -> new AppException(ErrorHandler.MOVIE_NOT_EXISTED));
@@ -348,17 +456,7 @@ public class ShowTimeServiceImpl implements ShowTimeService {
         CinemaRoom cinemaRoom = cinemaRoomRepository.findById(request.getCinemaRoomId())
                 .orElseThrow(() -> new AppException(ErrorHandler.CINEMA_ROOM_NOT_FOUND));
 
-        if(existingShowtime.getActive()){
-            throw new AppException(ErrorHandler.SHOWTIME_IN_ACTIVE);
-        }
-
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime set = LocalDateTime.of(request.getDate(), request.getTime());
-
-
-        if (set.isBefore(now) || existingShowtime.getDate() ==request.getDate() || existingShowtime.getTime() ==request.getTime()) {
-            throw  new AppException(ErrorHandler.INVALID_SHOWTIME);
-        }
+        validateNoSameRoomOverlapForUpdate(existingShowtime.getShowtimeID(), movie, cinemaRoom, request.getDate(), request.getTime());
 
         existingShowtime.setMovie(movie);
         existingShowtime.setCinemaRoom(cinemaRoom);
@@ -367,15 +465,43 @@ public class ShowTimeServiceImpl implements ShowTimeService {
         existingShowtime.setVersion(request.getVersion());
 
         showtimeRepository.save(existingShowtime);
+        movieService.syncMovieStatusPeriodByShowtimes(movie.getMovieID());
+        if (oldMovieId != null && !oldMovieId.equals(movie.getMovieID())) {
+            movieService.syncMovieStatusPeriodByShowtimes(oldMovieId);
+        }
 
         return "Đã cập nhật thành công";
     }
+
+    private void validateNoSameRoomOverlapForUpdate(Integer currentShowtimeId, Movie movie, CinemaRoom cinemaRoom, LocalDate date, LocalTime time) {
+        int bufferTime = 30;
+        LocalTime requestedStart = time;
+        LocalTime requestedEnd = time.plusMinutes(movie.getRunningTime() + bufferTime);
+
+        List<Showtime> existingShowtimes = showtimeRepository
+                .findByDateAndCinemaRoom_CinemaRoomID(date, cinemaRoom.getCinemaRoomID())
+                .stream()
+                .filter(showtime -> !showtime.getShowtimeID().equals(currentShowtimeId))
+                .toList();
+
+        for (Showtime existing : existingShowtimes) {
+            int existingRuntime = existing.getMovie().getRunningTime();
+            LocalTime existingStart = existing.getTime();
+            LocalTime existingEnd = existingStart.plusMinutes(existingRuntime + bufferTime);
+
+            boolean overlaps = requestedStart.isBefore(existingEnd) && requestedEnd.isAfter(existingStart);
+            if (overlaps) {
+                throw new AppException(ErrorHandler.INVALID_SHOWTIME, String.format(
+                        "Không thể cập nhật suất chiếu: Phòng %s, Ngày %s, Giờ bắt đầu %s bị trùng với suất chiếu hiện có từ %s đến %s của phim %s.",
+                        cinemaRoom.getRoomName(), date, requestedStart, existingStart, existingEnd, existing.getMovie().getTitle()));
+            }
+        }
+    }
+
     public DeleteShowTimeResponse deleteShowTimes(List<Integer> showtimeIds) {
         List<String> failedToDelete = new ArrayList<>();
         int deletedCount = 0;
-
-        LocalDate today = LocalDate.now();
-        LocalTime now = LocalTime.now();
+        Set<Integer> affectedMovieIds = new HashSet<>();
 
         for (Integer showtimeId : showtimeIds) {
             Optional<Showtime> optionalShowtime = showtimeRepository.findById(showtimeId);
@@ -386,42 +512,23 @@ public class ShowTimeServiceImpl implements ShowTimeService {
             }
 
             Showtime showtime = optionalShowtime.get();
-
-            if (Boolean.TRUE.equals(showtime.getActive())) {
-                failedToDelete.add(String.format(
-                        "Không thể xóa: Showtime %d - Phòng %s, Ngày %s, Giờ %s đang hoạt động.",
-                        showtimeId, showtime.getCinemaRoom().getRoomName(), showtime.getDate(), showtime.getTime()));
-                continue;
+            if (showtime.getMovie() != null) {
+                affectedMovieIds.add(showtime.getMovie().getMovieID());
             }
 
-            boolean canDelete = false;
-            if (showtime.getDate().isBefore(today)) {
-                canDelete = true;
-            } else if (showtime.getDate().isEqual(today)
-                    && (showtime.getTime().isBefore(now) || showtime.getTime().equals(now))) {
-                canDelete = true;
-            } else if (!showtime.getActive()){
-                canDelete = true;
-            }
-
-            if (canDelete) {
-                List<TicketBooking> bookings = showtime.getBookings();
-                if (bookings != null && !bookings.isEmpty()) {
-                    for (TicketBooking booking : bookings) {
-                        booking.setShowtime(null);
-                    }
-                    ticketBookingRepository.saveAll(bookings);
+            List<TicketBooking> bookings = showtime.getBookings();
+            if (bookings != null && !bookings.isEmpty()) {
+                for (TicketBooking booking : bookings) {
+                    booking.setShowtime(null);
                 }
-
-                showtimeRepository.deleteById(showtime.getShowtimeID());
-                deletedCount++;
-
-            } else {
-                failedToDelete.add(String.format(
-                        "Không thể xóa: Showtime %d - Phòng %s, Ngày %s, Giờ %s chưa chiếu.",
-                        showtimeId, showtime.getCinemaRoom().getRoomName(), showtime.getDate(), showtime.getTime()));
+                ticketBookingRepository.saveAll(bookings);
             }
+
+            showtimeRepository.deleteById(showtime.getShowtimeID());
+            deletedCount++;
         }
+
+        affectedMovieIds.forEach(movieService::syncMovieStatusPeriodByShowtimes);
 
         return new DeleteShowTimeResponse(deletedCount, failedToDelete);
     }
@@ -430,6 +537,11 @@ public class ShowTimeServiceImpl implements ShowTimeService {
     @Override
     public void turnOnOffShowTime(List<Integer> showTimeId){
         List<Showtime> showtimes = showtimeRepository.findAllById(showTimeId);
+        Set<Integer> affectedMovieIds = showtimes.stream()
+                .map(Showtime::getMovie)
+                .filter(Objects::nonNull)
+                .map(Movie::getMovieID)
+                .collect(Collectors.toSet());
 
         for (Showtime showtime : showtimes) {
             if (showtime.getActive()) {
@@ -443,6 +555,7 @@ public class ShowTimeServiceImpl implements ShowTimeService {
             showtime.setActive(!showtime.getActive());
         }
         showtimeRepository.saveAll(showtimes);
+        affectedMovieIds.forEach(movieService::syncMovieStatusPeriodByShowtimes);
     }
 
     public boolean checkIfShowTimeAfterDay(Showtime showtime) {

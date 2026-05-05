@@ -8,7 +8,6 @@ import movie.swp391.request.*;
 import movie.swp391.response.ApiResponse;
 import movie.swp391.service.PaymentService;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 
 import java.util.List;
@@ -36,6 +35,15 @@ public class PaymentController {
     public ApiResponse<String> paymentResult(@RequestBody PaymentResultRequest request) {
         return ApiResponse.<String>builder()
                 .result(paymentService.resultPayment(request))
+                .message("Success")
+                .status(200)
+                .build();
+    }
+
+    @PostMapping("/mock-success")
+    public ApiResponse<String> mockPaymentSuccess(@RequestBody MockPaymentRequest request) {
+        return ApiResponse.<String>builder()
+                .result(paymentService.mockSuccessPayment(request))
                 .message("Success")
                 .status(200)
                 .build();

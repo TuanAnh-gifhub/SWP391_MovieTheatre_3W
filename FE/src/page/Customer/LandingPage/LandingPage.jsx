@@ -1,12 +1,11 @@
 import { Link } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState, useRef } from "react";
-import { getAllMovies } from "../../../service/landingpage"; // 1. Import hàm
+import { useEffect, useMemo, useState, useRef } from "react";
+import { getAllMovies, getAllShowtimes } from "../../../service/landingpage"; // 1. Import hàm
 import MovieCard from "./MovieCard";
 import HeroSection from "../../../components/HeroSection/HeroSection";
 import heroImg from "../../../assets/img/hero-landingPage.png";
-import { getShowtimesByMovie } from "../../../service/bookmovieticket";
 import { useNavigate } from "react-router-dom";
 import QuickBooking from "./QuickBooking";
 import Gratitude from "../Gratitude/Gratitude";
@@ -61,10 +60,13 @@ const LandingPage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedMovieId, setSelectedMovieId] = useState("");
   const [showtimes, setShowtimes] = useState([]);
+  const [allShowtimes, setAllShowtimes] = useState([]);
+  const [nowTick, setNowTick] = useState(Date.now());
   const [cities, setCities] = useState([]);
   const [cinemas, setCinemas] = useState([]);
   const [dates, setDates] = useState([]);
   const [times, setTimes] = useState([]);
+  const [bookingMode] = useState("showtime");
   const [selected, setSelected] = useState({
     city: "",
     cinema: "",
@@ -116,6 +118,7 @@ const LandingPage = () => {
       setLoading(false);
     };
     fetchMovies();
+
     // Fetch promotion images for HeroSection
     const fetchPromotions = async () => {
       const res = await getAllPromotionsForGuest();
@@ -128,6 +131,45 @@ const LandingPage = () => {
     };
     fetchPromotions();
   }, []);
+
+  useEffect(() => {
+    const fetchShowtimes = async () => {
+      const res = await getAllShowtimes();
+      if (!res.error && Array.isArray(res.result)) {
+        setAllShowtimes(res.result);
+      } else {
+        setAllShowtimes([]);
+      }
+    };
+    fetchShowtimes();
+  }, []);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowTick(Date.now()), 60000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const visibleShowtimes = useMemo(() => {
+    return allShowtimes.filter((showtime) => {
+      if (!showtime?.active) return false;
+      const showtimeDateTime = new Date(`${showtime.showDate}T${showtime.showTime}`);
+      if (Number.isNaN(showtimeDateTime.getTime())) return false;
+      return showtimeDateTime.getTime() > nowTick - 15 * 60 * 1000;
+    });
+  }, [allShowtimes, nowTick]);
+
+  useEffect(() => {
+    setBookingError("");
+    setSelected({ city: "", cinema: "", date: "", time: "" });
+    setSelectedMovieId("");
+    setCinemas([]);
+    setDates([]);
+    setTimes([]);
+    if (bookingMode === "movie") {
+      setShowtimes([]);
+      setCities([]);
+    }
+  }, [bookingMode]);
 
   useEffect(() => {
     // Intersection Observer cho từng section
@@ -170,6 +212,9 @@ const LandingPage = () => {
   // 4. Tách phim đang chiếu và sắp chiếu
   const nowShowing = movies.filter((m) => m.status === "Now Showing");
   const comingSoon = movies.filter((m) => m.status === "Coming Soon");
+  const movieShowtimes = selectedMovieId
+    ? visibleShowtimes.filter((s) => String(s.movieId) === String(selectedMovieId))
+    : [];
 
   // Hàm chuyển đổi dữ liệu sang props cho MovieCard
   const normalize = (str) =>
@@ -217,6 +262,7 @@ const LandingPage = () => {
 
   // Khi chọn phim, lấy suất chiếu
   useEffect(() => {
+    if (bookingMode !== "movie") return;
     if (!selectedMovieId) {
       setShowtimes([]);
       setCities([]);
@@ -226,52 +272,78 @@ const LandingPage = () => {
       setSelected({ city: "", cinema: "", date: "", time: "" });
       return;
     }
-    const fetchShowtimes = async () => {
-      setBookingError("");
-      try {
-        const res = await getShowtimesByMovie(selectedMovieId);
-        const result = res?.data?.result?.dates || [];
-        // Flatten showtimes
-        let flatShowtimes = [];
-        result.forEach(dateObj => {
-          const showDate = dateObj.date;
-          dateObj.cities.forEach(city => {
-            const cityName = city.name;
-            city.cinemas.forEach(cinema => {
-              const cinemaName = cinema.name;
-              // Sửa ở đây: cinemaRooms là thuộc tính của cinema
-              cinema.cinemaRooms.forEach(room => {
-                const cinemaRoomName = room.roomName;
-                const cinemaRoomId = room.cinemaRoomID || room.cinemaRoomId;
-                // Lọc chỉ times active
-                room.times
-                  .filter(time => time.active)
-                  .forEach(time => {
-                    flatShowtimes.push({
-                      cityName,
-                      cinemaName,
-                      cinemaRoomName,
-                      cinemaRoomId,
-                      showDate,
-                      showTime: time.time,
-                      seats: time.seats,
-                    });
-                  });
-              });
-            });
-          });
-        });
-        setShowtimes(flatShowtimes);
-        setCities([...new Set(flatShowtimes.map(s => s.cityName))]);
-        setSelected({ city: "", cinema: "", date: "", time: "" });
-      } catch {
-        setBookingError("Đăng nhập để đặt vé!");
-        setShowtimes([]);
-        setCities([]);
-      }
-    };
-    fetchShowtimes();
-  }, [selectedMovieId]);
+    const movieShowtimes = visibleShowtimes.filter(
+      (s) => String(s.movieId) === String(selectedMovieId)
+    );
+
+    setShowtimes(movieShowtimes);
+    setCities([...new Set(movieShowtimes.map((s) => s.cityName).filter(Boolean))]);
+    setSelected({ city: "", cinema: "", date: "", time: "" });
+  }, [selectedMovieId, bookingMode, visibleShowtimes]);
+
+  useEffect(() => {
+    if (bookingMode !== "showtime") return;
+    const filteredShowtimes = selectedMovieId
+      ? visibleShowtimes.filter((s) => String(s.movieId) === String(selectedMovieId))
+      : visibleShowtimes;
+    setShowtimes(filteredShowtimes);
+    setCities([...new Set(visibleShowtimes.map(s => s.cityName).filter(Boolean))]);
+
+    // Keep the user's chosen city/cinema even if the newly chosen movie has no
+    // matching showtimes in that scope. Only lower-level selections are reset.
+    if (!selected.city) {
+      setCinemas([]);
+      setDates([]);
+      setTimes([]);
+      return;
+    }
+
+    const cinemasForCity = [...new Set(
+      filteredShowtimes
+        .filter((s) => s.cityName === selected.city)
+        .map((s) => s.cinemaName)
+        .filter(Boolean)
+    )];
+    setCinemas(cinemasForCity);
+
+    if (!selected.cinema) {
+      setDates([]);
+      setTimes([]);
+      setSelected(prev => ({ ...prev, date: "", time: "" }));
+      return;
+    }
+
+    const datesForCinema = [...new Set(
+      filteredShowtimes
+        .filter((s) => s.cityName === selected.city && s.cinemaName === selected.cinema)
+        .map((s) => s.showDate)
+        .filter(Boolean)
+    )];
+    setDates(datesForCinema);
+
+    if (!selected.date) {
+      setTimes([]);
+      setSelected(prev => ({ ...prev, time: "" }));
+      return;
+    }
+
+    const timesForDate = [...new Set(
+      filteredShowtimes
+        .filter(
+          (s) =>
+            s.cityName === selected.city &&
+            s.cinemaName === selected.cinema &&
+            s.showDate === selected.date
+        )
+        .map((s) => s.showTime)
+        .filter(Boolean)
+    )];
+    setTimes(timesForDate);
+
+    if (selected.time && !timesForDate.includes(selected.time)) {
+      setSelected(prev => ({ ...prev, time: "" }));
+    }
+  }, [selectedMovieId, bookingMode, visibleShowtimes]);
 
   // Khi chọn city
   useEffect(() => {
@@ -319,38 +391,82 @@ const LandingPage = () => {
   // Xử lý đặt vé ngay
   const handleQuickBooking = () => {
     setBookingError("");
-    if (!selectedMovieId || !selected.city || !selected.cinema || !selected.date || !selected.time) {
-      setBookingError("Vui lòng chọn đầy đủ thông tin!");
-      return;
-    }
-    // Lấy slug phim
-    const movieObj = movies.find(m => String(m.movieID) === String(selectedMovieId));
     const normalize = (str) =>
       str
         .toLowerCase()
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/\s+/g, "_");
-    const slug = movieObj ? normalize(movieObj.title) : "";
-    
-    // Tìm showtime tương ứng
-    const selectedShowtime = showtimes.find(s => 
+
+    if (bookingMode === "movie") {
+      if (!selectedMovieId || !selected.city || !selected.cinema || !selected.date || !selected.time) {
+        setBookingError("Vui lòng chọn đầy đủ thông tin!");
+        return;
+      }
+
+      const movieObj = movies.find(m => String(m.movieID) === String(selectedMovieId));
+      const slug = movieObj ? normalize(movieObj.title) : "";
+      const selectedShowtime = showtimes.find(s =>
+        s.cityName === selected.city &&
+        s.cinemaName === selected.cinema &&
+        s.showDate === selected.date &&
+        s.showTime === selected.time
+      );
+
+      navigate(`/movies/${slug}`, {
+        state: {
+          quickBooking: {
+            movieId: selectedMovieId,
+            city: selected.city,
+            cinema: selected.cinema,
+            date: selected.date,
+            time: selected.time,
+            showtime: selectedShowtime,
+          },
+          from: "landing"
+        }
+      });
+      return;
+    }
+
+    if (!selectedMovieId) {
+      setBookingError("Vui lòng chọn phim!");
+      return;
+    }
+
+    if (!selected.city || !selected.cinema || !selected.date || !selected.time) {
+      setBookingError("Vui lòng chọn đầy đủ thông tin!");
+      return;
+    }
+
+    const showtimeSource = visibleShowtimes.filter(
+      (s) => String(s.movieId) === String(selectedMovieId)
+    );
+
+    const selectedShowtime = showtimeSource.find(s =>
       s.cityName === selected.city &&
       s.cinemaName === selected.cinema &&
       s.showDate === selected.date &&
       s.showTime === selected.time
     );
-    
-    // Chuyển hướng đến MovieDetail, truyền state
+
+    if (!selectedShowtime) {
+      setBookingError("Không tìm thấy suất chiếu phù hợp!");
+      return;
+    }
+
+    const movieObj = movies.find(m => String(m.movieID) === String(selectedShowtime.movieId));
+    const slug = movieObj ? normalize(movieObj.title) : normalize(selectedShowtime.movieTitle || "");
+
     navigate(`/movies/${slug}`, {
       state: {
         quickBooking: {
-          movieId: selectedMovieId,
-          city: selected.city,
-          cinema: selected.cinema,
-          date: selected.date,
-          time: selected.time,
-          showtime: selectedShowtime, // Thêm thông tin showtime đầy đủ
+          movieId: selectedShowtime.movieId,
+          city: selectedShowtime.cityName,
+          cinema: selectedShowtime.cinemaName,
+          date: selectedShowtime.showDate,
+          time: selectedShowtime.showTime,
+          showtime: selectedShowtime,
         },
         from: "landing"
       }
@@ -462,6 +578,9 @@ const LandingPage = () => {
         <QuickBooking
           movies={movies}
           showtimes={showtimes}
+          allShowtimes={visibleShowtimes}
+          movieShowtimes={movieShowtimes}
+          bookingMode={bookingMode}
           cities={cities}
           cinemas={cinemas}
           dates={dates}

@@ -115,6 +115,33 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
+    public String mockSuccessPayment(MockPaymentRequest request) {
+        if (request == null || request.getBookingId() == null || request.getCustomerId() == null) {
+            throw new AppException(ErrorHandler.INVALID_INPUT, "Thiếu bookingId hoặc customerId");
+        }
+
+        TicketBooking ticketBooking = ticketBookingRepository.findById(request.getBookingId())
+                .orElseThrow(() -> new AppException(ErrorHandler.BOOKING_INVALID));
+
+        if (ticketBooking.getCustomer() == null
+                || !request.getCustomerId().equals(ticketBooking.getCustomer().getCustomerID())) {
+            throw new AppException(ErrorHandler.UNAUTHORIZED, "Bạn không có quyền thanh toán đơn này");
+        }
+
+        if ("Success".equalsIgnoreCase(ticketBooking.getStatus())) {
+            return "Đơn đã được thanh toán trước đó";
+        }
+
+        if (!"pending".equalsIgnoreCase(ticketBooking.getStatus())) {
+            throw new AppException(ErrorHandler.PAYMENT_OUT_TIME, "Đơn không còn ở trạng thái chờ thanh toán");
+        }
+
+        finalizeSuccessfulPayment(ticketBooking, ticketBooking.getTotalPrice(), null, null);
+        return "Mock thanh toán thành công";
+    }
+
+    @Override
+    @Transactional
     public Map<String, Object> handlePayOsWebhook(Map<String, Object> payload) {
         try {
             WebhookData verifiedData = verifyPayOsWebhook(payload);
@@ -249,9 +276,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .filter(booking -> booking.getBooking().getBookingID().equals(ticketBooking.getBookingID()))
                 .mapToDouble(TicketDetail::getUnitPrice)
                 .sum();
-        Double totalMoneyFood = ticketBooking.getBookingFoodAndDrinks().stream()
-                .filter(booking -> booking.getBooking().getBookingID().equals(ticketBooking.getBookingID()))
-                .mapToDouble(food -> food.getQuantity() * food.getFoodAndDrink().getPrice())
+        Double totalMoneyFood = ticketBooking.getBookingFoodAndDrinks() == null ? 0.0 : ticketBooking.getBookingFoodAndDrinks().stream()
+                .filter(booking -> booking.getBooking() != null && booking.getBooking().getBookingID().equals(ticketBooking.getBookingID()))
+                .mapToDouble(food -> food.getQuantity() * (food.getUnitPrice() != null ? food.getUnitPrice() : 0.0))
                 .sum();
         Double totalMoneyDiscount = ticketBooking.getShowtime().getMovie().getTotalMoneyWithoutFood()
                 + ticketBooking.getShowtime().getMovie().getTotalMoneyFood()

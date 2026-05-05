@@ -39,7 +39,8 @@ public class Showtime {
     private String version;
 
     @Column(nullable = true)
-    private Boolean active=false;
+    @Builder.Default
+    private Boolean active = true;
 
     @OneToMany(mappedBy = "showtime")
     private List<TicketBooking> bookings;

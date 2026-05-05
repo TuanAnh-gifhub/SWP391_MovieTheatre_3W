@@ -1,4 +1,4 @@
-package movie.swp391.request;
+package movie.swp391.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -10,13 +10,14 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-
-
-public class UpdateSeatRequest {
-     Integer cinemaRoomId;
-     Integer seatId;
-     Integer seatTypeId;
-     String seatName;
-     String seatType;
-     Double price;
+public class SeatTypeResponse {
+    Integer seatTypeID;
+    String code;
+    String name;
+    String description;
+    Double basePrice;
+    Boolean active;
+    Integer sortOrder;
+    Long seatCount;
 }
+

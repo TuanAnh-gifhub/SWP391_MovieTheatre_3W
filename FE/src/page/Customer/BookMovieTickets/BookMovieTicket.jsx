@@ -7,7 +7,7 @@ import { FiLogIn } from "react-icons/fi";
 import { MdEventBusy } from "react-icons/md";
 import Snackbar from "./Snackbar"; // Import Snackbar
 
-const BookMovieTicket = ({ movieId, movieTitle, poster, quickBooking, bookingInfo, setBookingInfo, onShowtimeChange, selectedFoods, setSelectedFoods }) => {
+const BookMovieTicket = ({ movieId, movieTitle, poster, isComingSoon = false, quickBooking, bookingInfo, setBookingInfo, onShowtimeChange, selectedFoods, setSelectedFoods }) => {
   const [showtimes, setShowtimes] = useState([]);
   const [cities, setCities] = useState([]);
   const [cinemas, setCinemas] = useState([]);
@@ -253,6 +253,27 @@ const BookMovieTicket = ({ movieId, movieTitle, poster, quickBooking, bookingInf
     }
   }, [selected.showtime, onShowtimeChange]);
 
+  useEffect(() => {
+    if (!isComingSoon) return;
+
+    setSelected(prev => ({
+      ...prev,
+      cinema: prev.cinema,
+      date: prev.date,
+      time: "",
+      room: "",
+      showtime: null,
+    }));
+    setAvailableSeats([]);
+    setSelectedSeats([]);
+    setBookingInfo(prev => ({
+      ...prev,
+      time: "",
+      selectedSeats: [],
+      totalPrice: 0,
+    }));
+  }, [isComingSoon, setBookingInfo]);
+
   // UI
   if (loading) return <div className="text-center py-4 text-orange-500 font-semibold">Đang tải...</div>;
 
@@ -339,6 +360,11 @@ const BookMovieTicket = ({ movieId, movieTitle, poster, quickBooking, bookingInf
               <h3 className="font-bold text-sm mb-2 text-orange-700 text-center tracking-wide uppercase">
                 DANH SÁCH RẠP
               </h3>
+              {isComingSoon && (
+                <div className="text-center text-orange-400 font-bold mb-3">
+                  Phim sắp chiếu - hiện chưa mở chọn suất và đặt vé.
+                </div>
+              )}
               {cinemas.length === 0 && (
                 <div className="text-gray-400 italic text-center">Không có rạp nào trong thành phố này.</div>
               )}
@@ -362,10 +388,14 @@ const BookMovieTicket = ({ movieId, movieTitle, poster, quickBooking, bookingInf
                             <button
                               key={time}
                               className={`px-4 py-1.5 rounded-lg font-bold border shadow transition-all duration-200 text-sm
+                                ${isComingSoon
+                                  ? "bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed hover:scale-100"
+                                  : ""}
                                 ${isSelected
                                   ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white border-orange-600 scale-105"
                                   : "bg-white text-orange-700 border-orange-400 hover:bg-orange-50 hover:scale-105"}`}
                               onClick={() => {
+                                if (isComingSoon) return;
                                 setSelected(prev => ({
                                   ...prev,
                                   city: prev.city,
@@ -378,6 +408,7 @@ const BookMovieTicket = ({ movieId, movieTitle, poster, quickBooking, bookingInf
                                 setAvailableSeats(showtimeObj.seats || []);
                                 setSelectedSeats([]);
                               }}
+                              disabled={isComingSoon}
                             >
                               {time}
                             </button>
@@ -450,6 +481,7 @@ const BookMovieTicket = ({ movieId, movieTitle, poster, quickBooking, bookingInf
           showtime={selected.showtime}
           onError={setError}
           disabled={
+            isComingSoon ||
             !bookingInfo.cityName ||
             !bookingInfo.cinemaName ||
             !bookingInfo.date ||

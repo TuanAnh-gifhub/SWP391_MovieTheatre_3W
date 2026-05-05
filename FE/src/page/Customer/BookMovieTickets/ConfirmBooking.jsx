@@ -4,7 +4,6 @@ import { confirmBooking } from "../../../service/bookmovieticket";
 // payment service imports for pay-by-points removed
 import { toast } from "react-toastify";
 import QRCode from "react-qr-code";
-import PaymentMethod from "../Payment/PaymentMethod";
 import CouponApply from "./CouponApply";
 import PromotionApply from "./PromotionApply";
 import ParallaxBackground from '../LandingPage/ParallaxBackground';
@@ -19,8 +18,6 @@ const ConfirmBooking = () => {
   const [loading, setLoading] = useState(false);
   const [apiMessage, setApiMessage] = useState("");
   const [successInfo, setSuccessInfo] = useState(null);
-  const [selectPayment, setSelectPayment] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState("");
   const [discountInfo, setDiscountInfo] = useState(null);
   // pay-by-points feature removed: related state removed
   const [selectedPromotionIds, setSelectedPromotionIds] = useState([]);
@@ -30,6 +27,8 @@ const ConfirmBooking = () => {
     const stored = localStorage.getItem('landing_dark_mode');
     return stored === 'true';
   });
+
+  const seatTypeLabel = (seatType) => seatType || "Thường";
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -129,10 +128,6 @@ const ConfirmBooking = () => {
   };
 
   // Lấy dữ liệu từ confirmInfo để truyền vào PromotionApply
-  const validShowDate = confirmInfo?.date;
-  const validShowTime = normalizeShowTime(confirmInfo?.time);
-  const validSeatIds = confirmInfo?.seats?.map(s => s.seatId || s.seatID).filter(Boolean);
-
   // Lấy discountVip từ confirmInfo
   const discountVip = confirmInfo?.discountVip || 0;
 
@@ -244,17 +239,7 @@ const ConfirmBooking = () => {
   }
 
   // Giao diện xác nhận trước khi đặt vé
-  const { movieName, screen, date, time, seats, totalPrice, fullName, email, identityCard, phoneNumber, poster } = confirmInfo;
-
-  // Giao diện chọn phương thức thanh toán
-  if (selectPayment) {
-    return (
-      <PaymentMethod
-        onSelect={setSelectedPayment}
-        defaultMethod={selectedPayment}
-      />
-    );
-  }
+  const { movieName, screen, date, time, seats, totalPrice, fullName, email, poster } = confirmInfo;
 
   // Tính tổng tiền ghế và tổng tiền foodAndDrink
   const seatTotal = seats?.reduce((sum, s) => sum + (Number(s.price) || 0), 0) || 0;
@@ -324,7 +309,7 @@ const ConfirmBooking = () => {
               <div className="font-medium text-gray-600">Ghế:</div>
               <div className="font-semibold break-all">{seats?.map(s => s.seatName).join(", ")}</div>
               <div className="font-medium text-gray-600">Loại ghế & Giá:</div>
-              <div className="font-semibold text-gray-800 break-all">{seats?.map(s => `${s.seatType} (${Number(s.price).toLocaleString()}đ)`).join(", ")}</div>
+              <div className="font-semibold text-gray-800 break-all">{seats?.map(s => `${seatTypeLabel(s.seatType)} (${Number(s.price).toLocaleString()}đ)`).join(", ")}</div>
               <div className="font-medium text-gray-600">Khách hàng:</div>
               <div className="font-semibold break-all">{fullName}</div>
               <div className="font-medium text-gray-600">Email:</div>

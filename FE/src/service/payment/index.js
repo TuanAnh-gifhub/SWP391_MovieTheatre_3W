@@ -145,6 +145,15 @@ export const confirmPayOSStatus = async ({
   }
 };
 
+export const mockSuccessPayment = async ({ bookingId, customerId }) => {
+  const res = await axios.post(
+    `${API_BASE}/mock-success`,
+    { bookingId, customerId },
+    { headers: getAuthHeader() }
+  );
+  return res.data;
+};
+
 // Pay-by-points functions removed - feature deleted
 
 export const updateMemberScore = async (customerID) => {

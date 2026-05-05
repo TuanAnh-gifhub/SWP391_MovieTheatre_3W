@@ -3,6 +3,7 @@ import { getOrderHistory } from "../../../../service/profile";
 import { FiDownload, FiSearch, FiFilter, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { handleDownloadTicket } from "./DownLoadOrdered";
 import { useNavigate } from "react-router-dom";
+import { mockSuccessPayment } from "../../../../service/payment";
 
 const encodeId = (id) => btoa(String(id));
 const normalize = (str) =>
@@ -123,6 +124,7 @@ const MyOrdered = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [downloadOrder, setDownloadOrder] = useState(null);
+  const [payingBookingId, setPayingBookingId] = useState(null);
   const ticketRef = useRef(null);
   const navigate = useNavigate();
 
@@ -135,24 +137,44 @@ const MyOrdered = () => {
 
   useEffect(() => { setPage(1); }, [search, statusFilter, dateFilter, pageSize]);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await getOrderHistory();
-        let data = response.data?.data;
-        if (data && !Array.isArray(data)) {
-          data = [data];
-        }
-        setOrders(data || []);
-      } catch (err) {
-        setError("Không có thông tin lịch sử đặt vé để hiển thị.");
-        setOrders([]);
-      } finally {
-        setLoading(false);
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await getOrderHistory();
+      let data = response.data?.data;
+      if (data && !Array.isArray(data)) {
+        data = [data];
       }
-    };
+      setOrders(data || []);
+    } catch (err) {
+      setError("Không có thông tin lịch sử đặt vé để hiển thị.");
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMockPayment = async (bookingId) => {
+    const customerId = Number(localStorage.getItem("id"));
+    if (!customerId) {
+      setError("Không xác định được tài khoản. Vui lòng đăng nhập lại.");
+      return;
+    }
+
+    try {
+      setPayingBookingId(bookingId);
+      await mockSuccessPayment({ bookingId, customerId });
+      await fetchOrders();
+    } catch (err) {
+      const message = err?.response?.data?.message || "Thanh toán thử thất bại.";
+      setError(message);
+    } finally {
+      setPayingBookingId(null);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
   }, []);
 
@@ -174,7 +196,7 @@ const MyOrdered = () => {
       (order.movieTitle && order.movieTitle.toLowerCase().includes(q)) ||
       (order.bookingId && String(order.bookingId).toLowerCase().includes(q));
     const matchStatus =
-      !statusFilter || order.status === statusFilter;
+      !statusFilter || String(order.status || "").toLowerCase() === statusFilter.toLowerCase();
     const matchDate =
       !dateFilter || (order.bookingDate && new Date(order.bookingDate).toISOString().slice(0,10) === dateFilter);
     return matchSearch && matchStatus && matchDate;
@@ -227,6 +249,7 @@ const MyOrdered = () => {
             <option value="">Tất cả</option>
             <option value="Success">Thành công</option>
             <option value="Cancelled">Đã hủy</option>
+            <option value="pending">Chờ thanh toán</option>
           </select>
         </div>
         {/* Ngày đặt vé */}
@@ -281,16 +304,31 @@ const MyOrdered = () => {
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.status === "Success" ? "bg-green-100 text-green-700" : order.status === "Cancelled" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
                   {order.status}
                 </span>
-                <button
-                  title="Lưu vé"
-                  className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-200 text-yellow-600 transition"
-                  onClick={e => {
-                    e.stopPropagation();
-                    setDownloadOrder(order);
-                  }}
-                >
-                  <FiDownload size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                  {String(order.status || "").toLowerCase() === "pending" && (
+                    <button
+                      title="Thanh toán thử thành công"
+                      className="px-2 py-1 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold transition disabled:opacity-60"
+                      disabled={payingBookingId === order.bookingId}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleMockPayment(order.bookingId);
+                      }}
+                    >
+                      {payingBookingId === order.bookingId ? "Đang xử lý..." : "Thanh toán thử"}
+                    </button>
+                  )}
+                  <button
+                    title="Lưu vé"
+                    className="p-2 rounded-full bg-yellow-50 hover:bg-yellow-200 text-yellow-600 transition"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setDownloadOrder(order);
+                    }}
+                  >
+                    <FiDownload size={20} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}

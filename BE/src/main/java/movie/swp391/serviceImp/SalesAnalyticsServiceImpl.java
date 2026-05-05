@@ -3,10 +3,8 @@ package movie.swp391.serviceImp;
 import movie.swp391.entity.*;
 import movie.swp391.repository.*;
 import movie.swp391.entity.BookingFoodAndDrink;
-import movie.swp391.entity.FoodAndDrink;
 import movie.swp391.entity.TicketBooking;
 import movie.swp391.repository.BookingFoodAndDrinkRepository;
-import movie.swp391.repository.FoodAndDrinkRepository;
 import movie.swp391.repository.TicketBookingRepository;
 import movie.swp391.response.SalesSummaryResponse;
 import movie.swp391.service.SalesAnalyticsService;
@@ -47,8 +45,6 @@ public class SalesAnalyticsServiceImpl implements SalesAnalyticsService {
     private TicketBookingRepository ticketBookingRepository;
     @Autowired
     private BookingFoodAndDrinkRepository bookingFoodAndDrinkRepository;
-    @Autowired
-    private FoodAndDrinkRepository foodAndDrinkRepository;
 
     @Override
     public List<SalesSummaryResponse> getSalesSummary(String from, String to) {
@@ -77,12 +73,11 @@ public class SalesAnalyticsServiceImpl implements SalesAnalyticsService {
             TicketBooking booking = foodOrder.getBooking();
             if (booking == null) continue;
             String timeSlot = formatTimeSlot(booking.getBookingDate(), timeUnit, formatter);
-            FoodAndDrink food = foodOrder.getFoodAndDrink();
-            String cat = food != null ? food.getType() : "Unknown";
+            String cat = snapshotFoodType(foodOrder);
             String key = timeSlot + "|" + cat;
             SalesSummaryResponse dto = summaryMap.getOrDefault(key, new SalesSummaryResponse(timeSlot, cat, 0, 0.0));
             dto.setOrderVolume(dto.getOrderVolume() + foodOrder.getQuantity());
-            dto.setRevenue(dto.getRevenue() + (food != null && food.getPrice() != null ? food.getPrice() * foodOrder.getQuantity() : 0.0));
+            dto.setRevenue(dto.getRevenue() + snapshotFoodPrice(foodOrder) * foodOrder.getQuantity());
             summaryMap.put(key, dto);
         }
 
@@ -200,5 +195,29 @@ public class SalesAnalyticsServiceImpl implements SalesAnalyticsService {
             default:
                 return dateTime.toLocalDate().format(formatter);
         }
+    }
+
+    private String snapshotFoodType(BookingFoodAndDrink foodOrder) {
+        if (foodOrder == null) {
+            return "Unknown";
+        }
+        if (foodOrder.getFoodType() != null && !foodOrder.getFoodType().isBlank()) {
+            return foodOrder.getFoodType();
+        }
+        return foodOrder.getFoodAndDrink() != null && foodOrder.getFoodAndDrink().getType() != null
+                ? foodOrder.getFoodAndDrink().getType()
+                : "Unknown";
+    }
+
+    private double snapshotFoodPrice(BookingFoodAndDrink foodOrder) {
+        if (foodOrder == null) {
+            return 0.0;
+        }
+        if (foodOrder.getUnitPrice() != null) {
+            return foodOrder.getUnitPrice();
+        }
+        return foodOrder.getFoodAndDrink() != null && foodOrder.getFoodAndDrink().getPrice() != null
+                ? foodOrder.getFoodAndDrink().getPrice()
+                : 0.0;
     }
 }

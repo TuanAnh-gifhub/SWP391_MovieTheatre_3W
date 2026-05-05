@@ -25,11 +25,15 @@ import movie.swp391.response.MovieStatusPeriodResponse;
 import movie.swp391.service.MovieService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,9 +52,73 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public List<MovieResponse> getAllMovies() {
-        List<MovieResponse> movies = movieRepository.findAll().stream().map(movieMapper::toMovieResponse).toList();
+        List<Movie> allMovies = movieRepository.findAll();
+        for (Movie movie : allMovies) {
+            syncMovieStatusPeriodByShowtimes(movie.getMovieID());
+        }
+
+        List<MovieResponse> movies = movieRepository.findAll().stream()
+                .map(this::toDerivedMovieResponse)
+                .toList();
         if (movies.isEmpty()) throw new AppException(ErrorHandler.LIST_EMPTY);
         return movies;
+    }
+
+    private MovieResponse toDerivedMovieResponse(Movie movie) {
+        MovieResponse response = movieMapper.toMovieResponse(movie);
+        List<Showtime> showtimes = movie.getShowtimes();
+
+        if (showtimes == null || showtimes.isEmpty()) {
+            response.setFromDate(null);
+            response.setToDate(null);
+            response.setStatus("No Schedule");
+            return response;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime comingSoonThreshold = now.plusDays(7);
+        boolean hasPast = false;
+        boolean hasFuture = false;
+        LocalDateTime earliestFutureShowtime = null;
+
+        LocalDate firstDate = null;
+        LocalDate latestDate = null;
+
+        for (Showtime showtime : showtimes) {
+            LocalDate showDate = showtime.getDate();
+            LocalDateTime showDateTime = LocalDateTime.of(showtime.getDate(), showtime.getTime());
+
+            if (showDateTime.isBefore(now)) {
+                hasPast = true;
+            } else if (showDateTime.isAfter(now)) {
+                hasFuture = true;
+                if (earliestFutureShowtime == null || showDateTime.isBefore(earliestFutureShowtime)) {
+                    earliestFutureShowtime = showDateTime;
+                }
+            }
+
+            if (firstDate == null || showDate.isBefore(firstDate)) {
+                firstDate = showDate;
+            }
+            if (latestDate == null || showDate.isAfter(latestDate)) {
+                latestDate = showDate;
+            }
+        }
+
+        response.setFromDate(firstDate);
+        response.setToDate(latestDate);
+
+        if (hasPast && !hasFuture) {
+            response.setStatus("Ended");
+        } else if (!hasPast && hasFuture
+                && earliestFutureShowtime != null
+                && (earliestFutureShowtime.isEqual(comingSoonThreshold) || earliestFutureShowtime.isAfter(comingSoonThreshold))) {
+            response.setStatus("Coming Soon");
+        } else {
+            response.setStatus("Now Showing");
+        }
+
+        return response;
     }
 
     @Override
@@ -81,7 +149,6 @@ public class MovieServiceImpl implements MovieService {
         Movie movie = movieRepository.findById(movieId).orElseThrow(() -> new AppException(ErrorHandler.MOVIE_NOT_EXISTED));
         if (movieRepository.existsMoviesByTitleAndPosterAndMovieIDNot(request.getTitle(), request.getVersion(), movieId))
             throw new AppException(ErrorHandler.MOVIE_EXIST);
-        if (movie.getActive()) throw new AppException(ErrorHandler.MOVIE_IN_ACTIVE);
         movieMapper.updateMovie(movie, request);
 
         return movieMapper.toMovieResponse(movieRepository.save(movie));
@@ -198,6 +265,74 @@ public class MovieServiceImpl implements MovieService {
                     return showtimeDateTime.isAfter(now.plusMinutes(movie.getRunningTime()));
                 });
 
+    }
+
+    @Override
+    @Transactional
+    public void syncMovieStatusPeriodByShowtimes(Integer movieId) {
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new AppException(ErrorHandler.MOVIE_NOT_EXISTED));
+
+        Optional<Showtime> latestShowtimeOpt = showtimeRepository.findTopByMovie_MovieIDOrderByDateDescTimeDesc(movieId);
+        if (latestShowtimeOpt.isEmpty()) {
+            if (movie.getMovieStatusPeriod() != null) {
+                movie.setMovieStatusPeriod(null);
+                movieRepository.save(movie);
+            }
+            return;
+        }
+
+        LocalDate latestDate = latestShowtimeOpt.get().getDate();
+        LocalDate firstDate = showtimeRepository.findTopByMovie_MovieIDOrderByDateAscTimeAsc(movieId)
+                .map(Showtime::getDate)
+                .orElse(latestDate);
+
+        MovieStatusPeriod period = movie.getMovieStatusPeriod();
+        boolean changed = false;
+
+        if (period == null) {
+            period = new MovieStatusPeriod();
+            period.setFromDate(firstDate);
+            period.setToDate(latestDate);
+            movie.setMovieStatusPeriod(period);
+            changed = true;
+        } else {
+            // A period can be shared by multiple movies; clone it so syncing one movie does not overwrite others.
+            if (period.getMovies() != null && period.getMovies().stream().anyMatch(m -> !m.getMovieID().equals(movieId))) {
+                MovieStatusPeriod cloned = new MovieStatusPeriod();
+                cloned.setFromDate(period.getFromDate());
+                cloned.setToDate(period.getToDate());
+                movie.setMovieStatusPeriod(cloned);
+                period = cloned;
+                changed = true;
+            }
+
+            if (period.getFromDate() == null || period.getFromDate().isAfter(firstDate)) {
+                period.setFromDate(firstDate);
+                changed = true;
+            }
+
+            if (period.getToDate() == null || !period.getToDate().equals(latestDate)) {
+                period.setToDate(latestDate);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            movieRepository.save(movie);
+        }
+    }
+
+    @Scheduled(fixedRate = 300000)
+    @Transactional
+    public void syncAllMovieStatusPeriodsByShowtimes() {
+        movieRepository.findAll().forEach(movie -> {
+            try {
+                syncMovieStatusPeriodByShowtimes(movie.getMovieID());
+            } catch (Exception ex) {
+                log.warn("Failed to sync movie status period for movieID={}: {}", movie.getMovieID(), ex.getMessage());
+            }
+        });
     }
 
 

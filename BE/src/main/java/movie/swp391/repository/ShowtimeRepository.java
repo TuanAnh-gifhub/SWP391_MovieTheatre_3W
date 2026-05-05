@@ -9,24 +9,24 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ShowtimeRepository extends JpaRepository<Showtime, Integer> {
     List<Showtime> findByMovieMovieIDAndDateAfterOrDateEquals(Integer movieID, LocalDate date1, LocalDate date2);
+
     List<Showtime> findByMovieMovieIDAndDate(Integer movieID, LocalDate date);
 
-
-    List<Showtime> findAllByMovie_MovieID(Integer movieMovieID);
 
     @Query("SELECT s.time FROM Showtime s WHERE s.date = :date AND s.cinemaRoom.cinemaRoomID = :cinemaRoomId")
     List<LocalTime> findTimesByDateAndCinemaRoom(@Param("date") LocalDate date, @Param("cinemaRoomId") Integer cinemaRoomId);
 
 
     @Query(value = """
-    SELECT m.running_time 
-    FROM showtimes s 
-    JOIN movies m ON m.movieid = s.movieid 
-    WHERE s.date = :date 
+    SELECT m.running_time
+    FROM showtimes s
+    JOIN movies m ON m.movieid = s.movieid
+    WHERE s.date = :date
       AND CONVERT(time, s.time) = CONVERT(time, :time)
       AND s.cinema_roomid = :cinemaRoomId
     """, nativeQuery = true)
@@ -35,9 +35,26 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Integer> {
             @Param("time") LocalTime time,
             @Param("cinemaRoomId") Integer cinemaRoomId);
 
-    boolean existsByDateAndCinemaRoom_CinemaRoomIDAndTime(LocalDate date, Integer cinemaRoomID, LocalTime time);
+    @Query(value = """
+        SELECT CASE WHEN COUNT(1) > 0 THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END
+        FROM showtimes s
+        WHERE s.date = :date
+          AND s.cinema_roomid = :cinemaRoomID
+          AND CONVERT(time, s.time) = CONVERT(time, :time)
+        """, nativeQuery = true)
+    boolean existsByDateAndCinemaRoom_CinemaRoomIDAndTime(
+            @Param("date") LocalDate date,
+            @Param("cinemaRoomID") Integer cinemaRoomID,
+            @Param("time") LocalTime time
+    );
 
     List<Showtime> findByDateAndCinemaRoom_CinemaRoomID(LocalDate date, Integer cinemaRoomId);
+
+    Optional<Showtime> findTopByMovie_MovieIDOrderByDateDescTimeDesc(Integer movieId);
+
+    Optional<Showtime> findTopByMovie_MovieIDOrderByDateAscTimeAsc(Integer movieId);
+
+    List<Showtime> findAllByMovie_MovieID(Integer movieMovieID);
 
     List<Showtime> findByMovie_MovieID(Integer movieMovieID);
 

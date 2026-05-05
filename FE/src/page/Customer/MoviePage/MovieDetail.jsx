@@ -65,6 +65,7 @@ const MovieDetail = () => {
     totalPrice: 0,
   });
   const [selectedFoods, setSelectedFoods] = useState([]);
+  const isComingSoon = movie?.status === "Coming Soon";
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -336,6 +337,7 @@ const MovieDetail = () => {
         <div className="w-full max-w-4xl mx-auto mt-0">
           <BookingSection
             movie={movie}
+            isComingSoon={isComingSoon}
             quickBooking={location.state?.quickBooking}
             bookingInfo={bookingInfo}
             setBookingInfo={setBookingInfo}
@@ -361,6 +363,7 @@ const MovieDetail = () => {
               console.error(errorMsg);
             }}
             disabled={
+              isComingSoon ||
               !bookingInfo.cityName ||
               !bookingInfo.cinemaName ||
               !bookingInfo.date ||

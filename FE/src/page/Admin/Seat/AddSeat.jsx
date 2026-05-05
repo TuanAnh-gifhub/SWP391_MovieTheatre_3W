@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, InputNumber, Select, Button, Checkbox } from "antd";
-import { createSeats, getAllSeats } from "../../../service/seat";
+import { Form, InputNumber, Select } from "antd";
+import { createSeats, getAllSeatTypes } from "../../../service/seat";
 import { getAllCinemaRooms } from "../../../service/cinemaroom";
 import { showSuccessToast, showErrorToast } from "../../../utils/toast";
 import { HomeOutlined, UserOutlined, DollarOutlined } from "@ant-design/icons";
@@ -21,6 +21,7 @@ const generateSeatNames = () => {
 const AddSeat = ({ onSuccess, onClose, selectedRoom }) => {
   const [form] = Form.useForm();
   const [cinemaRooms, setCinemaRooms] = useState([]);
+  const [seatTypes, setSeatTypes] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -39,6 +40,18 @@ const AddSeat = ({ onSuccess, onClose, selectedRoom }) => {
         });
 
         setCinemaRooms(uniqueRooms);
+      }
+    });
+    getAllSeatTypes().then(res => {
+      if (res.success && Array.isArray(res.data)) {
+        setSeatTypes(res.data);
+        const firstType = res.data[0];
+        if (firstType) {
+          form.setFieldsValue({
+            seatTypeId: firstType.seatTypeID,
+            price: firstType.basePrice,
+          });
+        }
       }
     });
   }, []);
@@ -65,7 +78,8 @@ const AddSeat = ({ onSuccess, onClose, selectedRoom }) => {
       setLoading(true);
       const seats = selectedSeats.map(seatName => ({
         seatName,
-        seatType: values.seatType,
+        seatTypeId: values.seatTypeId,
+        seatType: seatTypes.find(t => t.seatTypeID === values.seatTypeId)?.code || seatTypes.find(t => t.seatTypeID === values.seatTypeId)?.name,
         price: Number(values.price),
       }));
 
@@ -115,8 +129,8 @@ const AddSeat = ({ onSuccess, onClose, selectedRoom }) => {
             
             return selectedRoom?.cinemaRoomID || selectedRoom?.cinemaRoomId || "";
           })(),
-          seatType: "Normal",
-          price: 10000,
+          seatTypeId: seatTypes[0]?.seatTypeID,
+          price: seatTypes[0]?.basePrice || 10000,
         }}
         className="space-y-4"
       >
@@ -191,17 +205,23 @@ const AddSeat = ({ onSuccess, onClose, selectedRoom }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Form.Item
               label="Loại ghế"
-              name="seatType"
+              name="seatTypeId"
               rules={[{ required: true, message: "Vui lòng chọn loại ghế" }]}
               className="mb-2"
             >
               <Select 
                 placeholder="Chọn loại ghế"
                 className="rounded-lg"
-                options={[
-                  { label: "Thường", value: "Normal" },
-                  { label: "VIP", value: "VIP" },
-                ]}
+                options={seatTypes.map(type => ({
+                  label: `${type.name} (${Number(type.basePrice || 0).toLocaleString("vi-VN")}đ)`,
+                  value: type.seatTypeID,
+                }))}
+                onChange={seatTypeId => {
+                  const selectedType = seatTypes.find(type => type.seatTypeID === seatTypeId);
+                  if (selectedType) {
+                    form.setFieldsValue({ price: selectedType.basePrice });
+                  }
+                }}
               />
             </Form.Item>
             

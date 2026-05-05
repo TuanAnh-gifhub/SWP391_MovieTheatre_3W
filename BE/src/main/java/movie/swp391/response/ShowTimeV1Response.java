@@ -1,10 +1,8 @@
 package movie.swp391.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import movie.swp391.entity.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -67,6 +65,7 @@ public class ShowTimeV1Response {
         LocalTime time;
         String movieTitle;
         String movieId;
+        String version;
         Boolean active;
         LocalTime toTime;
     }

@@ -7,13 +7,19 @@ const BookSeat = ({
   availableSeats = [],
   selectedSeats,
   handleSelectSeat,
-  handleBack,
-  setBookingInfo, // nhận props này
-  bookingInfo,
+  setBookingInfo,
   selectedFoods = [],
   setSelectedFoods = () => {},
 }) => {
   const [show3D, setShow3D] = useState(false);
+  const normalizeSeatType = (seatType) => String(seatType || "").toLowerCase();
+  const isVipSeat = seatType => normalizeSeatType(seatType).includes("vip");
+  const isDoubleSeat = seatType => normalizeSeatType(seatType).includes("double") || normalizeSeatType(seatType).includes("doi");
+  const getSeatColor = seatType => {
+    if (isVipSeat(seatType)) return "bg-yellow-200";
+    if (isDoubleSeat(seatType)) return "bg-purple-200";
+    return "bg-gray-200";
+  };
 
   const seatRows = Array.from(
     new Set(availableSeats.map((s) => s.seatName[0]))
@@ -40,19 +46,10 @@ const BookSeat = ({
       );
     }
     // ...logic cũ giữ nguyên...
-    let color =
-      seat.seatType === "VIP"
-        ? "bg-yellow-200"
-        : "bg-gray-200";
-    let disabled = false;
-
+    let color = getSeatColor(seat.seatType);
+    const disabled = seat.status !== "Blank";
     if (seat.status === "Occupied") {
       color = "bg-red-200"; // màu đỏ nhạt cho ghế đã bán
-      disabled = true;
-    } else if (seat.status === "Blank") {
-      disabled = false;
-    } else {
-      disabled = true;
     }
 
     if (isSelected(seat)) color = "bg-gray-900 text-white";
@@ -100,6 +97,9 @@ const BookSeat = ({
         </span>
         <span className="flex items-center mr-4 text-orange-600">
           <span className="bg-yellow-200 px-2 py-1 rounded text-orange-700 font-semibold text-sm">Ghế Vip</span>
+        </span>
+        <span className="flex items-center mr-4 text-purple-600">
+          <span className="bg-purple-200 px-2 py-1 rounded text-purple-700 font-semibold text-sm">Ghế đôi</span>
         </span>
         <span className="flex items-center mr-4 text-gray-900">
           <span className="bg-gray-900 px-2 py-1 rounded text-orange-700 font-semibold text-sm">Ghế đang chọn</span>

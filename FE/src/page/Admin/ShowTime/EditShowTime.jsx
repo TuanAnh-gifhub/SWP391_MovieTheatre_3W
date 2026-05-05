@@ -3,12 +3,18 @@ import { EditOutlined, HomeOutlined, VideoCameraOutlined } from "@ant-design/ico
 import { Modal, Button, Form, Select, DatePicker, TimePicker, message, Row, Col, Input } from "antd";
 import { updateShowtime, fetchAllRooms } from "../../../service/showtime";
 import dayjs from "dayjs";
-import { useLocation } from "react-router-dom";
 
 const { Option } = Select;
 
-const EditShowTime = ({ showtime, onSuccess }) => {
-  const [visible, setVisible] = useState(false);
+const EditShowTime = ({
+  showtime,
+  onSuccess,
+  visible: controlledVisible,
+  onCancel,
+  hideTrigger = false,
+  buttonProps = {},
+}) => {
+  const [internalVisible, setInternalVisible] = useState(false);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -17,14 +23,15 @@ const EditShowTime = ({ showtime, onSuccess }) => {
   const [cinemas, setCinemas] = useState([]);
   const [cinemaRooms, setCinemaRooms] = useState([]);
 
-  const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const movieIdFromUrl = params.get("movieId");
-  // Ưu tiên lấy movieId từ showtime, nếu không có thì lấy từ URL
-  let movieIdToUse = showtime.movieId;
-  if (!movieIdToUse || movieIdToUse === 0) {
-    movieIdToUse = movieIdFromUrl ? Number(movieIdFromUrl) : undefined;
-  }
+  const isControlled = typeof controlledVisible === "boolean";
+  const visible = isControlled ? controlledVisible : internalVisible;
+
+  const closeModal = () => {
+    if (!isControlled) {
+      setInternalVisible(false);
+    }
+    onCancel?.();
+  };
 
   useEffect(() => {
     const loadRooms = async () => {
@@ -37,11 +44,12 @@ const EditShowTime = ({ showtime, onSuccess }) => {
     loadRooms();
   }, []);
 
-  const openModal = () => {
-    setVisible(true);
-    // Tìm city, cinema, room theo showtime.cinemaRoomId
+  useEffect(() => {
+    if (!visible || !showtime || allRooms.length === 0) return;
+
+    const movieIdToUse = showtime.movieId ? Number(showtime.movieId) : undefined;
     let cityID, cinemaID, cinemaRoomID = showtime.cinemaRoomId;
-    let cityObj, cinemaObj, roomObj;
+    let cityObj, cinemaObj;
     allRooms.forEach(city => {
       city.cinemas.forEach(cinema => {
         cinema.cinemaRooms.forEach(room => {
@@ -50,7 +58,6 @@ const EditShowTime = ({ showtime, onSuccess }) => {
             cinemaID = cinema.cinemaID;
             cityObj = city;
             cinemaObj = cinema;
-            roomObj = room;
           }
         });
       });
@@ -58,15 +65,21 @@ const EditShowTime = ({ showtime, onSuccess }) => {
     setCinemas(cityObj ? cityObj.cinemas : []);
     setCinemaRooms(cinemaObj ? cinemaObj.cinemaRooms : []);
     form.setFieldsValue({
-      showtimeId: showtime.showtimeId,
+      showtimeId: showtime.showtimeId || showtime.id,
       movieId: movieIdToUse || "", // luôn set vào form, tránh undefined
       cityID: cityID,
       cinemaID: cinemaID,
       cinemaRoomId: cinemaRoomID,
       date: showtime.date ? dayjs(showtime.date) : null,
-      time: showtime.time ? dayjs(showtime.time, "HH:mm") : null,
+      time: showtime.time ? dayjs(showtime.time?.slice(0, 5), "HH:mm") : null,
       version: showtime.version,
     });
+  }, [visible, showtime, allRooms, form]);
+
+  const openModal = () => {
+    if (!isControlled) {
+      setInternalVisible(true);
+    }
   };
 
   const handleCityChange = (cityID) => {
@@ -97,7 +110,7 @@ const EditShowTime = ({ showtime, onSuccess }) => {
       const res = await updateShowtime(payload);
       if (!res.error) {
         message.success("Cập nhật suất chiếu thành công!");
-        setVisible(false);
+        closeModal();
         onSuccess && onSuccess();
       } else {
         message.error(res.message);
@@ -111,13 +124,16 @@ const EditShowTime = ({ showtime, onSuccess }) => {
 
   return (
     <>
-      <Button
-        icon={<EditOutlined />}
-        onClick={openModal}
-        type="primary"
-        size="small"
-        style={{ marginRight: 8 }}
-      />
+      {!hideTrigger && (
+        <Button
+          icon={<EditOutlined />}
+          onClick={openModal}
+          type="primary"
+          size="small"
+          style={{ marginRight: 8 }}
+          {...buttonProps}
+        />
+      )}
       <Modal
         title={
           <span className="text-2xl font-bold text-blue-700 flex items-center gap-2">
@@ -126,7 +142,7 @@ const EditShowTime = ({ showtime, onSuccess }) => {
         }
         open={visible}
         onOk={handleOk}
-        onCancel={() => setVisible(false)}
+        onCancel={closeModal}
         confirmLoading={loading}
         okText="Lưu"
         cancelText="Hủy"

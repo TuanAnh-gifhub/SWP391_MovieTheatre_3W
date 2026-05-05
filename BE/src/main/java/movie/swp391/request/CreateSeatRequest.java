@@ -24,6 +24,7 @@ public class CreateSeatRequest {
  @Builder
  @FieldDefaults(level = AccessLevel.PRIVATE)
  public static class SeatDTO {
+  Integer seatTypeId;
   String seatName;
   String seatType;
   Double price;

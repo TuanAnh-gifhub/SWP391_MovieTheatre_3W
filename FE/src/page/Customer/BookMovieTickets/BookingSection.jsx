@@ -3,6 +3,7 @@ import BookMovieTicket from "./BookMovieTicket";
 
 const BookingSection = ({
   movie,
+  isComingSoon = false,
   quickBooking,
   bookingInfo,
   setBookingInfo,
@@ -17,6 +18,7 @@ const BookingSection = ({
         movieId={movie.movieID}
         movieTitle={movie.title}
         poster={movie.poster}
+        isComingSoon={isComingSoon}
         quickBooking={quickBooking}
         bookingInfo={bookingInfo}
         setBookingInfo={setBookingInfo}

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import movie.swp391.entity.CinemaRoom;
 import movie.swp391.entity.Seat;
+import movie.swp391.entity.SeatType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -24,4 +25,8 @@ public interface SeatRepository extends JpaRepository<Seat, Integer> {
     boolean existsBySeatNameAndCinemaRoom(String seatName, CinemaRoom room);
 
     int countByCinemaRoom(CinemaRoom room);
+
+    long countBySeatTypeRef_SeatTypeID(Integer seatTypeId);
+
+    List<Seat> findBySeatTypeRef_SeatTypeID(Integer seatTypeId);
 }

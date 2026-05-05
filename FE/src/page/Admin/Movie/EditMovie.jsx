@@ -11,13 +11,29 @@ import {
   Col,
   Divider,
   Spin,
+  Table,
+  Tag,
+  Popconfirm,
+  Empty,
+  Space,
+  Typography,
 } from "antd";
-import { UploadOutlined, VideoCameraOutlined, PictureOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  VideoCameraOutlined,
+  PictureOutlined,
+  CalendarOutlined,
+  ClockCircleOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { getMovieById, updateMovie } from "../../../service/movie/index";
+import { getShowtimes, deleteShowtime } from "../../../service/showtime";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import EditShowTime from "../ShowTime/EditShowTime";
 
 const { TextArea } = Input;
+const { Text } = Typography;
 
 const genreOptions = [
    { value: "Hành động", label: "Phim Hành Động (Action)" },
@@ -74,10 +90,72 @@ const EditMovie = ({ visible, onCancel, onSuccess, movieID }) => {
   const [posterPreview, setPosterPreview] = useState(null);
   const [trailerUrl, setTrailerUrl] = useState("");
   const [originPosterUrl, setOriginPosterUrl] = useState("");
+  const [showtimesLoading, setShowtimesLoading] = useState(false);
+  const [movieShowtimes, setMovieShowtimes] = useState([]);
+  const [deletingShowtimeId, setDeletingShowtimeId] = useState(null);
+
+  const flattenMovieShowtimes = (data, targetMovieId) => {
+    const normalizedMovieId = Number(targetMovieId);
+    const result = [];
+
+    data.forEach((city) => {
+      city.cinemas?.forEach((cinema) => {
+        cinema.cinemaRooms?.forEach((room) => {
+          room.showtimes?.forEach((show) => {
+            show.times?.forEach((time) => {
+              if (Number(time.movieId) !== normalizedMovieId) return;
+
+              result.push({
+                id: time.showtimeID,
+                showtimeId: time.showtimeID,
+                movieId: Number(time.movieId),
+                movieTitle: time.movieTitle,
+                version: time.version,
+                active: Boolean(time.active),
+                cityName: city.cityName,
+                cinemaID: cinema.cinemaID,
+                cinemaName: cinema.name,
+                cinemaRoomId: room.cinemaRoomID,
+                cinemaRoom: room.roomName,
+                date: show.date,
+                time: time.time,
+                toTime: time.toTime,
+              });
+            });
+          });
+        });
+      });
+    });
+
+    return result.sort((a, b) => {
+      const left = dayjs(`${a.date} ${String(a.time).slice(0, 5)}`);
+      const right = dayjs(`${b.date} ${String(b.time).slice(0, 5)}`);
+      return right.valueOf() - left.valueOf();
+    });
+  };
+
+  const loadMovieShowtimes = async (targetMovieId = movieID) => {
+    if (!targetMovieId) return;
+
+    setShowtimesLoading(true);
+    try {
+      const response = await getShowtimes();
+      if (!response.error) {
+        setMovieShowtimes(flattenMovieShowtimes(response.result || [], targetMovieId));
+      } else {
+        toast.error(response.message || "Không thể lấy danh sách suất chiếu của phim");
+      }
+    } catch (error) {
+      toast.error("Không thể lấy danh sách suất chiếu của phim");
+    } finally {
+      setShowtimesLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (visible && movieID) {
       setFetching(true);
+      loadMovieShowtimes(movieID);
       getMovieById(movieID).then((res) => {
         if (!res.error) {
           const movie = res.result;
@@ -104,6 +182,13 @@ const EditMovie = ({ visible, onCancel, onSuccess, movieID }) => {
       });
     }
   }, [visible, movieID, form]);
+
+  useEffect(() => {
+    if (!visible) {
+      setMovieShowtimes([]);
+      setDeletingShowtimeId(null);
+    }
+  }, [visible]);
 
   const normFile = (e) => {
     if (Array.isArray(e)) return e;
@@ -194,6 +279,116 @@ const EditMovie = ({ visible, onCancel, onSuccess, movieID }) => {
       setLoading(false);
     }
   };
+
+  const handleDeleteShowtime = async (showtimeId) => {
+    try {
+      setDeletingShowtimeId(showtimeId);
+      const response = await deleteShowtime(showtimeId);
+
+      if (!response.error && (response.status === 200 || response.status === 204)) {
+        if (response.result?.failures?.length) {
+          response.result.failures.forEach((failure) => toast.error(failure));
+        } else {
+          toast.success("Xóa suất chiếu thành công!");
+          await loadMovieShowtimes(movieID);
+        }
+        return;
+      }
+
+      toast.error(response.message || "Xóa suất chiếu thất bại");
+    } catch (error) {
+      toast.error("Xóa suất chiếu thất bại");
+    } finally {
+      setDeletingShowtimeId(null);
+    }
+  };
+
+  const showtimeColumns = [
+    {
+      title: "Ngày chiếu",
+      dataIndex: "date",
+      key: "date",
+      width: 130,
+      render: (value) => (
+        <Space size={6}>
+          <CalendarOutlined className="text-blue-600" />
+          <span>{value ? dayjs(value).format("DD/MM/YYYY") : "-"}</span>
+        </Space>
+      ),
+    },
+    {
+      title: "Giờ chiếu",
+      key: "timeRange",
+      width: 150,
+      render: (_, record) => (
+        <Space size={6}>
+          <ClockCircleOutlined className="text-indigo-600" />
+          <span>
+            {record.time?.slice(0, 5)} - {record.toTime?.slice(0, 5)}
+          </span>
+        </Space>
+      ),
+    },
+    {
+      title: "Rạp / Phòng",
+      key: "cinemaRoom",
+      render: (_, record) => (
+        <div>
+          <div className="font-medium text-gray-900">{record.cinemaName}</div>
+          <div className="text-xs text-gray-500">{record.cityName} • {record.cinemaRoom}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Phiên bản",
+      dataIndex: "version",
+      key: "version",
+      width: 110,
+      render: (value) => <Tag color="blue">{value || "-"}</Tag>,
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "active",
+      key: "active",
+      width: 110,
+      render: (active) => (
+        <Tag color={active ? "green" : "default"}>{active ? "Đang bật" : "Đã tắt"}</Tag>
+      ),
+    },
+    {
+      title: "Thao tác",
+      key: "actions",
+      width: 170,
+      render: (_, record) => (
+        <Space wrap>
+          <EditShowTime
+            showtime={record}
+            onSuccess={() => loadMovieShowtimes(movieID)}
+            buttonProps={{
+              children: "Sửa",
+            }}
+          />
+          <Popconfirm
+            title="Xóa suất chiếu"
+            description="Bạn có chắc muốn xóa suất chiếu này?"
+            okText="Xóa"
+            cancelText="Hủy"
+            okButtonProps={{ danger: true, loading: deletingShowtimeId === record.showtimeId }}
+            onConfirm={() => handleDeleteShowtime(record.showtimeId)}
+          >
+            <Button
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              loading={deletingShowtimeId === record.showtimeId}
+            >
+              Xóa
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
   return (
     <Modal
@@ -319,10 +514,9 @@ const EditMovie = ({ visible, onCancel, onSuccess, movieID }) => {
                         height="100%"
                         src={getYoutubeEmbedUrl(trailerUrl)}
                         title="YouTube trailer"
-                        frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        style={{ borderRadius: 8, width: "100%", height: "100%" }}
+                        style={{ border: 0, borderRadius: 8, width: "100%", height: "100%" }}
                       />
                     ) : (
                       <div className="text-center">
@@ -487,6 +681,37 @@ const EditMovie = ({ visible, onCancel, onSuccess, movieID }) => {
               </div>
             </Col>
           </Row>
+          <Divider orientation="left" className="!mt-8">
+            Suất chiếu hiện có của phim
+          </Divider>
+          <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl border border-blue-100 p-4 shadow-sm">
+            <div className="flex flex-col gap-1 mb-4">
+              <Text strong className="text-base text-gray-900">
+                Quản lý suất chiếu trong mục chỉnh sửa phim
+              </Text>
+              <Text type="secondary">
+                Danh sách được sắp xếp từ suất chiếu mới nhất đến cũ nhất.
+              </Text>
+            </div>
+
+            <Table
+              rowKey="showtimeId"
+              loading={showtimesLoading}
+              columns={showtimeColumns}
+              dataSource={movieShowtimes}
+              pagination={{ pageSize: 5, hideOnSinglePage: true }}
+              locale={{
+                emptyText: (
+                  <Empty
+                    description="Phim này chưa có suất chiếu nào"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                ),
+              }}
+              scroll={{ x: 900 }}
+              size="middle"
+            />
+          </div>
           <Divider className="my-4" />
           <div className="flex gap-3 justify-end">
             <Button 

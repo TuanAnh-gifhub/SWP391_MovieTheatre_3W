@@ -22,6 +22,7 @@ public interface ShowTimeMapper {
     // Mapping the Showtime to TimeWithMovieTitleDTO
     @Mapping(source = "movie.title", target = "movieTitle")
     @Mapping(source = "movie.movieID", target = "movieId")
+    @Mapping(source = "version", target = "version")
     @Mapping(source = "active", target = "active")
     @Mapping(target = "toTime", expression = "java(calculateToTime(showtime))")
     ShowTimeV1Response.TimeWithMovieTitleDTO toTimeWithMovieTitleDTO(Showtime showtime);

@@ -10,6 +10,8 @@ export default defineConfig({
   server: {
     // Only expose dev server locally; this removes extra Network URLs.
     host: 'localhost',
+    port: 5173,
+    strictPort: true,
     allowedHosts: ['.trycloudflare.com'], // cho phép Cloudflare tunnel
     proxy: {
       '/api': {

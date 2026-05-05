@@ -21,5 +21,17 @@ public class BookingFoodAndDrink {
     @JoinColumn(name = "food_and_drink_id")
     private FoodAndDrink foodAndDrink;
 
+    @Column(name = "food_name", length = 255)
+    private String foodName;
+
+    @Column(name = "food_type", length = 100)
+    private String foodType;
+
+    @Column(name = "food_image", length = 255)
+    private String foodImage;
+
+    @Column(name = "unit_price")
+    private Double unitPrice;
+
     private Integer quantity;
 }

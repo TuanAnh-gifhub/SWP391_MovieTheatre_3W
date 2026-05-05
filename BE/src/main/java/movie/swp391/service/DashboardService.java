@@ -43,9 +43,9 @@ public class DashboardService {
         LocalDateTime end = to.atTime(23,59,59);
 
         // total revenue (scalar)
-        Object revObj = em.createNativeQuery("SELECT ISNULL(SUM(total_price),0) FROM TicketBookings WHERE bookingDate BETWEEN :start AND :end")
-                .setParameter("start", start)
-                .setParameter("end", end)
+        Object revObj = em.createNativeQuery("SELECT ISNULL(SUM(total_price),0) FROM TicketBookings WHERE bookingDate BETWEEN ?1 AND ?2")
+                .setParameter(1, start)
+                .setParameter(2, end)
                 .getSingleResult();
         Double totalRevenue = 0.0;
         if (revObj instanceof Number) {
@@ -57,9 +57,9 @@ public class DashboardService {
         }
 
         // total orders
-        Object ordersObj = em.createNativeQuery("SELECT COUNT(1) FROM TicketBookings WHERE bookingDate BETWEEN :start AND :end")
-                .setParameter("start", start)
-                .setParameter("end", end)
+        Object ordersObj = em.createNativeQuery("SELECT COUNT(1) FROM TicketBookings WHERE bookingDate BETWEEN ?1 AND ?2")
+                .setParameter(1, start)
+                .setParameter(2, end)
                 .getSingleResult();
         Long totalOrders = 0L;
         if (ordersObj instanceof Number) totalOrders = ((Number) ordersObj).longValue();
@@ -82,10 +82,10 @@ public class DashboardService {
             sqlLabel = "CONVERT(varchar(10), bookingDate, 23)";
         }
 
-        String sql = String.format("SELECT %s as dt, ISNULL(SUM(total_price),0) as revenue FROM TicketBookings WHERE bookingDate BETWEEN :start AND :end GROUP BY %s ORDER BY %s", sqlLabel, sqlLabel, sqlLabel);
+        String sql = String.format("SELECT %s as dt, ISNULL(SUM(total_price),0) as revenue FROM TicketBookings WHERE bookingDate BETWEEN ?1 AND ?2 GROUP BY %s ORDER BY %s", sqlLabel, sqlLabel, sqlLabel);
         Query q = em.createNativeQuery(sql);
-        q.setParameter("start", from.atStartOfDay());
-        q.setParameter("end", to.atTime(23,59,59));
+        q.setParameter(1, from.atStartOfDay());
+        q.setParameter(2, to.atTime(23,59,59));
         @SuppressWarnings("unchecked")
         List<Object[]> rows = q.getResultList();
         List<RevenuePointDTO> out = new ArrayList<>();
@@ -99,10 +99,10 @@ public class DashboardService {
 
     public List<SalesSummaryDTO> getSalesSummary(LocalDate from, LocalDate to) {
         // Example grouping by movie title
-        String sql2 = "SELECT movie_title, COUNT(1) AS orders, ISNULL(SUM(total_price),0) AS revenue FROM TicketBookings WHERE bookingDate BETWEEN :start AND :end GROUP BY movie_title ORDER BY revenue DESC";
+        String sql2 = "SELECT movie_title, COUNT(1) AS orders, ISNULL(SUM(total_price),0) AS revenue FROM TicketBookings WHERE bookingDate BETWEEN ?1 AND ?2 GROUP BY movie_title ORDER BY revenue DESC";
         Query q = em.createNativeQuery(sql2);
-        q.setParameter("start", from.atStartOfDay());
-        q.setParameter("end", to.atTime(23,59,59));
+        q.setParameter(1, from.atStartOfDay());
+        q.setParameter(2, to.atTime(23,59,59));
         @SuppressWarnings("unchecked")
         List<Object[]> rows = q.getResultList();
         List<SalesSummaryDTO> out = new ArrayList<>();
@@ -116,10 +116,10 @@ public class DashboardService {
     }
 
     public List<CustomerAnalyticsDTO> getCustomerAnalytics(LocalDate from, LocalDate to) {
-        String sql3 = "SELECT c.customerID, c.full_name, COUNT(b.bookingID) AS totalOrders, ISNULL(SUM(b.total_price),0) AS totalSpent FROM customers c LEFT JOIN TicketBookings b ON c.customerID = b.customerID AND b.bookingDate BETWEEN :start AND :end GROUP BY c.customerID, c.full_name ORDER BY totalSpent DESC";
+        String sql3 = "SELECT c.customerID, c.full_name, COUNT(b.bookingID) AS totalOrders, ISNULL(SUM(b.total_price),0) AS totalSpent FROM customers c LEFT JOIN TicketBookings b ON c.customerID = b.customerID AND b.bookingDate BETWEEN ?1 AND ?2 GROUP BY c.customerID, c.full_name ORDER BY totalSpent DESC";
         Query q = em.createNativeQuery(sql3);
-        q.setParameter("start", from.atStartOfDay());
-        q.setParameter("end", to.atTime(23,59,59));
+        q.setParameter(1, from.atStartOfDay());
+        q.setParameter(2, to.atTime(23,59,59));
         @SuppressWarnings("unchecked")
         List<Object[]> rows = q.getResultList();
         List<CustomerAnalyticsDTO> out = new ArrayList<>();
@@ -241,8 +241,8 @@ public class DashboardService {
 
         Double foodRevenue = asDouble(
                 em.createQuery(
-                                "SELECT COALESCE(SUM(bfd.quantity * fd.price),0) " +
-                                        "FROM BookingFoodAndDrink bfd JOIN bfd.booking tb JOIN bfd.foodAndDrink fd " +
+                                "SELECT COALESCE(SUM(bfd.quantity * COALESCE(bfd.unitPrice,0)),0) " +
+                                        "FROM BookingFoodAndDrink bfd JOIN bfd.booking tb " +
                                         "WHERE LOWER(tb.status) = 'success' AND tb.bookingDate BETWEEN :start AND :end")
                         .setParameter("start", start)
                         .setParameter("end", end)
@@ -289,8 +289,8 @@ public class DashboardService {
 
         Map<Integer, Double> foodByBooking = new HashMap<>();
         List<Object[]> foodRows = em.createQuery(
-                        "SELECT tb.bookingID, COALESCE(SUM(bfd.quantity * fd.price),0) " +
-                                "FROM BookingFoodAndDrink bfd JOIN bfd.booking tb JOIN bfd.foodAndDrink fd " +
+                        "SELECT tb.bookingID, COALESCE(SUM(bfd.quantity * COALESCE(bfd.unitPrice,0)),0) " +
+                                "FROM BookingFoodAndDrink bfd JOIN bfd.booking tb " +
                                 "WHERE LOWER(tb.status) = 'success' AND tb.bookingDate BETWEEN :start AND :end " +
                                 "GROUP BY tb.bookingID", Object[].class)
                 .setParameter("start", start)
@@ -438,13 +438,13 @@ public class DashboardService {
     private SeatAnalyticsDTO buildSeatAnalysis(LocalDateTime start, LocalDateTime end) {
         // Aggregate by zone/area instead of individual seat
         List<Object[]> seatRows = em.createQuery(
-                        "SELECT s.seatID, s.seatName, s.seatType, s.row, s.column, " +
+                        "SELECT s.seatID, s.seatName, COALESCE(st.name, s.seatType), s.row, s.column, " +
                                 "SUM(CASE WHEN LOWER(tb.status) = 'success' THEN 1 ELSE 0 END) " +
-                                "FROM Seat s " +
+                                "FROM Seat s LEFT JOIN s.seatTypeRef st " +
                                 "LEFT JOIN s.ticketDetails td " +
                                 "LEFT JOIN td.booking tb " +
                                 "WHERE tb IS NULL OR tb.bookingDate BETWEEN :start AND :end " +
-                                "GROUP BY s.seatID, s.seatName, s.seatType, s.row, s.column", Object[].class)
+                                "GROUP BY s.seatID, s.seatName, COALESCE(st.name, s.seatType), s.row, s.column", Object[].class)
                 .setParameter("start", start)
                 .setParameter("end", end)
                 .getResultList();
@@ -484,10 +484,10 @@ public class DashboardService {
         // 1) seat counts per room & area
         List<Object[]> seatCountRows = em.createQuery(
                         "SELECT cr.cinemaRoomID, " +
-                                "CASE WHEN s.seatType = 'VIP' THEN 'VIP' WHEN s.column <= 2 OR s.column >= 10 THEN 'GOC' ELSE 'HANG_GIUA' END, " +
+                                "CASE WHEN COALESCE(st.name, s.seatType) = 'VIP' THEN 'VIP' WHEN s.column <= 2 OR s.column >= 10 THEN 'GOC' ELSE 'HANG_GIUA' END, " +
                                 "COUNT(s) " +
-                                "FROM Seat s JOIN s.cinemaRoom cr GROUP BY cr.cinemaRoomID, " +
-                                "CASE WHEN s.seatType = 'VIP' THEN 'VIP' WHEN s.column <= 2 OR s.column >= 10 THEN 'GOC' ELSE 'HANG_GIUA' END", Object[].class)
+                                "FROM Seat s LEFT JOIN s.seatTypeRef st JOIN s.cinemaRoom cr GROUP BY cr.cinemaRoomID, " +
+                                "CASE WHEN COALESCE(st.name, s.seatType) = 'VIP' THEN 'VIP' WHEN s.column <= 2 OR s.column >= 10 THEN 'GOC' ELSE 'HANG_GIUA' END", Object[].class)
                 .getResultList();
 
         Map<Integer, Map<String, Long>> seatCountPerRoom = new HashMap<>();

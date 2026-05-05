@@ -10,49 +10,35 @@ export const fetchAllRooms = async () => {
 
     if (!token) return { error: true, message: "No token found, please login again." };
 
+    console.log("API_BASE_URL:", API_BASE_URL);
+    console.log("Fetching from:", `${API_BASE_URL}/showtime/view-all-room`);
+    
     const response = await axios.get(`${API_BASE_URL}/showtime/view-all-room`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
+    
+    console.log("Raw response:", response);
+    
     return {
       error: false,
       result: response.data.result,
       message: response.data.message,
     };
   } catch (error) {
-    return {
-      error: true,
-      message: error.response?.data?.message || "Failed to fetch rooms",
-    };
-  }
-};
-
-// Lấy danh sách ngày chiếu cho phim
-export const fetchAvailableDates = async (movieId) => {
-  try {
-    const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
-    const token = adminUser.token;
-
-    if (!token) return { error: true, message: "No token found, please login again." };
-
-    const response = await axios.get(`${API_BASE_URL}/showtime/view-date-create-showtime`, {
-      params: { movieId },
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
+    console.error("Detailed error info:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      headers: error.response?.headers,
     });
-    return {
-      error: false,
-      result: response.data.result,
-      message: response.data.message,
-    };
-  } catch (error) {
+    
     return {
       error: true,
-      message: error.response?.data?.message || "Failed to fetch available dates",
+      message: error.response?.data?.message || error.response?.statusText || error.message || "Failed to fetch rooms",
     };
   }
 };
@@ -143,32 +129,6 @@ export const deleteShowtime = async (showtimeIds) => {
   }
 };
 
-export const suggestValidateTime = async ({ date, cinemaRoomId, movieId }) => {
-  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
-  const token = adminUser.token;
-  try {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/showtime/suggest-validate-time`,
-      { date, cinemaRoomId, movieId },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return {
-      error: false,
-      result: response.data.result,
-      message: response.data.message,
-    };
-  } catch (error) {
-    return {
-      error: true,
-      message: error.response?.data?.message || "Không thể gợi ý giờ chiếu",
-    };
-  }
-};
 
 // Bật/tắt kích hoạt (xóa mềm) showtime
 export const onOffShowtime = async (showtimeIds) => {

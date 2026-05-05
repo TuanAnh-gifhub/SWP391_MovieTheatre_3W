@@ -70,6 +70,7 @@ const PaymentSuccess = () => {
     const payosOrderCode = params.orderCode;
     const payosStatus = params.status;
     const payosCode = params.code;
+    const isMockFlow = (params.mock || "").toLowerCase() === "1" || (params.mock || "").toLowerCase() === "true";
     const payosCancel = (params.cancel || "").toLowerCase() === "true";
     const isVNPayFlow = Boolean(vnp_ResponseCode || vnp_TransactionStatus || params.vnp_TxnRef);
     const isPayOSFlow = !isVNPayFlow && (
@@ -99,6 +100,24 @@ const PaymentSuccess = () => {
     });
 
     // pay-by-points removed; fallback to normal payment flows
+
+    if (isMockFlow && storedBookingId > 0) {
+      setOrderInfo({
+        bookingId: storedBookingId,
+        totalMoney: storedTotalMoney,
+        cinemaRoomId,
+        seats,
+        payDate: new Date().toISOString(),
+        orderInfo: `MOCK-${storedBookingId}`,
+        bankCode: "Mock",
+        cardType: "Mock",
+        status: "Success",
+      });
+      setStatus("success");
+      setMessage("Thanh toán thử thành công!");
+      clearPaymentStorage();
+      return;
+    }
 
     // Validation dữ liệu cho thanh toán qua PayOS
     if (isPayOSFlow) {

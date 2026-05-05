@@ -28,10 +28,10 @@ import java.util.Set;
 
 public class SeatServiceImpl implements SeatService {
 
-    CinemaRepository cinemaRepository;
     CityRepository cityRepository;
     CinemaRoomRepository cinemaRoomRepository;
     SeatRepository seatRepository;
+    SeatTypeRepository seatTypeRepository;
     TicketDetailRepository ticketDetailRepository;
 
 @Override
@@ -49,11 +49,12 @@ public class SeatServiceImpl implements SeatService {
                     List<SeatFromCityresponse.SeatDTO> seatDTOs = new ArrayList<>();
 
                     for (Seat seat : room.getSeats()) {
+                        String seatTypeLabel = resolveSeatTypeLabel(seat);
                         SeatFromCityresponse.SeatDTO seatDTO = SeatFromCityresponse.SeatDTO.builder()
                                 .seatID(seat.getSeatID())
                                 .seatName(seat.getSeatName())
-                                .seatType(seat.getSeatType())
-                                .price(seat.getPrice())
+                                .seatType(seatTypeLabel)
+                                .price(resolveSeatPrice(seat))
                                 .isAvailable(seat.getIsAvailable())
                                 .build();
                         seatDTOs.add(seatDTO);
@@ -124,10 +125,13 @@ public class SeatServiceImpl implements SeatService {
                         "Ghế '" + dto.getSeatName() + "' đã tồn tại trong phòng chiếu này.");
             }
 
+            SeatType resolvedType = resolveSeatType(dto.getSeatTypeId(), dto.getSeatType());
+
             Seat seat = Seat.builder()
                     .seatName(dto.getSeatName())
-                    .seatType(dto.getSeatType())
-                    .price(dto.getPrice())
+                    .seatType(resolveSeatTypeLabel(resolvedType, dto.getSeatType()))
+                    .seatTypeRef(resolvedType)
+                    .price(resolveSeatPrice(dto.getPrice(), resolvedType))
                     .cinemaRoom(room)
                     .build();
 
@@ -150,9 +154,18 @@ public class SeatServiceImpl implements SeatService {
             throw new AppException(ErrorHandler.SEAT_NOT_BELONG);
         }
 
+        SeatType resolvedType = resolveSeatType(request.getSeatTypeId(), request.getSeatType());
+
         seat.setSeatName(request.getSeatName());
-        seat.setSeatType(request.getSeatType());
-        seat.setPrice(request.getPrice());
+        if (resolvedType != null || request.getSeatType() != null) {
+            seat.setSeatType(resolveSeatTypeLabel(resolvedType, request.getSeatType()));
+            seat.setSeatTypeRef(resolvedType);
+        }
+        if (request.getPrice() != null) {
+            seat.setPrice(request.getPrice());
+        } else if (resolvedType != null) {
+            seat.setPrice(resolvedType.getBasePrice());
+        }
         seatRepository.save(seat);
 
         return "Đã cập nhật thành công";
@@ -192,6 +205,64 @@ public class SeatServiceImpl implements SeatService {
         }
 
         return false;
+    }
+
+    private SeatType resolveSeatType(Integer seatTypeId, String seatTypeLabel) {
+        if (seatTypeId != null) {
+            return seatTypeRepository.findById(seatTypeId)
+                    .orElseThrow(() -> new AppException(ErrorHandler.SEAT_TYPE_NOT_FOUND));
+        }
+        if (seatTypeLabel == null || seatTypeLabel.isBlank()) {
+            return null;
+        }
+        return seatTypeRepository.findByCodeIgnoreCase(seatTypeLabel.trim())
+                .or(() -> seatTypeRepository.findByNameIgnoreCase(seatTypeLabel.trim()))
+                .orElse(null);
+    }
+
+    private String resolveSeatTypeLabel(SeatType seatType) {
+        if (seatType != null && seatType.getName() != null && !seatType.getName().isBlank()) {
+            return seatType.getName();
+        }
+        return null;
+    }
+
+    private String resolveSeatTypeLabel(Seat seat) {
+        if (seat == null) {
+            return null;
+        }
+        if (seat.getSeatTypeRef() != null && seat.getSeatTypeRef().getName() != null && !seat.getSeatTypeRef().getName().isBlank()) {
+            return seat.getSeatTypeRef().getName();
+        }
+        return seat.getSeatType();
+    }
+
+    private String resolveSeatTypeLabel(SeatType seatType, String fallback) {
+        String label = resolveSeatTypeLabel(seatType);
+        return label != null ? label : fallback;
+    }
+
+    private Double resolveSeatPrice(Double requestedPrice, SeatType seatType) {
+        if (requestedPrice != null) {
+            return requestedPrice;
+        }
+        if (seatType != null && seatType.getBasePrice() != null) {
+            return seatType.getBasePrice();
+        }
+        return 0.0;
+    }
+
+    private Double resolveSeatPrice(Seat seat) {
+        if (seat == null) {
+            return 0.0;
+        }
+        if (seat.getPrice() != null) {
+            return seat.getPrice();
+        }
+        if (seat.getSeatTypeRef() != null && seat.getSeatTypeRef().getBasePrice() != null) {
+            return seat.getSeatTypeRef().getBasePrice();
+        }
+        return 0.0;
     }
 
 } 

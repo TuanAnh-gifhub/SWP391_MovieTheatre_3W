@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Button, Form, Select, TimePicker, Input, Modal, Row, Col, Divider, Tooltip, Checkbox } from 'antd';
-import { createShowtime, fetchAllRooms, fetchAvailableDates, suggestValidateTime } from '../../../service/showtime';
+import { Button, Form, Select, TimePicker, Modal, Row, Col, Divider, Tooltip, Checkbox } from 'antd';
+import { createShowtime, fetchAllRooms } from '../../../service/showtime';
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import dayjs from 'dayjs';
@@ -14,6 +14,11 @@ import {
 } from '@ant-design/icons';
 
 const { Option } = Select;
+
+const buildDateOptions = (days = 30) => {
+  const today = dayjs();
+  return Array.from({ length: days }, (_, index) => today.add(index, 'day').format('YYYY-MM-DD'));
+};
 
 const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
   const location = useLocation();
@@ -29,33 +34,59 @@ const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [selectedDates, setSelectedDates] = useState([]);
-  const [suggestedTimes, setSuggestedTimes] = useState({});
   const formRef = useRef();
 
   useEffect(() => {
-    if (movieIdToUse) {
-      form.setFieldsValue({ movieId: Number(movieIdToUse) });
-      fetchAvailableDates(movieIdToUse).then(response => {
-        if (!response.error) {
-          setAvailableDates(response.result);
-        } else {
-          setAvailableDates([]);
-          toast.error(response.message || 'Không thể tìm được ngày có sẵn!');
-        }
-      });
-    }
+    setAvailableDates(buildDateOptions());
+    if (movieIdToUse) form.setFieldsValue({ movieId: Number(movieIdToUse) });
   }, [movieIdToUse, form, visible]);
 
-  useEffect(() => {
-    const loadRooms = async () => {
-      const res = await fetchAllRooms();
-      if (!res.error) {
-        setAllRooms(res.result);
-        setCities(res.result.map(city => ({ id: city.cityID, name: city.name, cinemas: city.cinemas })));
-      }
-    };
-    loadRooms();
-  }, []);
+   useEffect(() => {
+     const loadRooms = async () => {
+       try {
+         console.log("Starting loadRooms...");
+         const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
+         console.log("Admin user from localStorage:", adminUser);
+         
+         if (!adminUser.token) {
+           console.error("No token found in localStorage");
+           toast.error("No authentication token. Please login again.");
+           return;
+         }
+
+         const res = await fetchAllRooms();
+         console.log("fetchAllRooms response:", res);
+         
+         if (!res.error && res.result) {
+           console.log("✓ Successfully fetched rooms, count:", res.result.length);
+           setAllRooms(res.result);
+           const mappedCities = res.result.map(city => ({ 
+             cityID: city.cityID, 
+             name: city.name, 
+             cinemas: city.cinemas 
+           }));
+           console.log("Mapped cities:", mappedCities);
+           setCities(mappedCities);
+           if (mappedCities.length === 0) {
+             console.warn("⚠ No cities found in response");
+             toast.warning("No cities available. Please check backend data.");
+           }
+         } else {
+           console.error("✗ Error from API:", res);
+           const errorMsg = res.message || "Failed to fetch cities and rooms";
+           console.error("Error message:", errorMsg);
+           toast.error(errorMsg);
+         }
+       } catch (error) {
+         console.error("✗ Exception in loadRooms:", error);
+         toast.error("Failed to load cities and rooms: " + error.message);
+       }
+     };
+     if (visible) {
+       console.log("Modal visible = true, loading rooms...");
+       loadRooms();
+     }
+   }, [visible]);
 
   const handleCityChange = (cityID) => {
     const city = allRooms.find(c => c.cityID === cityID);
@@ -82,34 +113,12 @@ const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
     form.setFieldsValue({ times });
   };
 
-  // Áp dụng giờ gợi ý cho từng ngày
-  const handleApplySuggest = async (date) => {
-    const cinemaRoomId = form.getFieldValue('cinemaRoomID');
-    if (!cinemaRoomId || !movieIdToUse) return;
-    const res = await suggestValidateTime({
-      date,
-      cinemaRoomId,
-      movieId: Number(movieIdToUse),
-    });
-    if (!res.error && Array.isArray(res.result)) {
-      // Lưu cả startTime và endTime
-      setSuggestedTimes(prev => ({
-        ...prev,
-        [date]: res.result.map(t => ({
-          startTime: t.startTime,
-          endTime: t.endTime
-        }))
-      }));
-      const times = form.getFieldValue('times') || {};
-      times[date] = res.result.map(t => dayjs(t.startTime, 'HH:mm:ss'));
-      form.setFieldsValue({ times });
-    } else {
-      toast.error(res.message || "Không lấy được giờ gợi ý!");
-    }
-  };
-
   // Submit tạo suất chiếu
   const onFinish = async (values) => {
+    if (!movieIdToUse) {
+      toast.error('Thiếu thông tin phim để tạo suất chiếu');
+      return;
+    }
     setLoading(true);
     const times = values.times || {};
     // Lấy các ngày có giờ chiếu
@@ -141,16 +150,15 @@ const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
     setLoading(false);
   };
 
-  // Reset form khi mở lại modal
-  useEffect(() => {
-    if (visible) {
-      form.resetFields();
-      setCinemas([]);
-      setCinemaRooms([]);
-      setSelectedDates([]);
-      setSuggestedTimes({});
-    }
-  }, [visible, form]);
+   // Reset form khi mở lại modal
+   useEffect(() => {
+     if (visible) {
+       form.resetFields();
+       // Preserve cities data, only reset cinema-related fields
+       setCinemaRooms([]);
+       setSelectedDates([]);
+     }
+   }, [visible, form, cities]);
 
   useEffect(() => {
     if (visible && movieIdToUse) {
@@ -174,16 +182,7 @@ const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
     >
       <Form form={form} onFinish={onFinish} layout="vertical" ref={formRef}>
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              name="movieId"
-              label={<span><VideoCameraOutlined /> Phim</span>}
-              rules={[{ required: true, message: 'Vui lòng chọn phim' }]}
-            >
-              <Input disabled placeholder="ID phim sẽ tự động điền" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
+          <Col span={24}>
             <Form.Item
               name="version"
               label={<span><HomeOutlined /> Phiên bản</span>}
@@ -206,14 +205,22 @@ const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
           <Col span={8}>
             <Form.Item
               name="cityID"
-              label={<span><EnvironmentOutlined /> Thành phố</span>}
+              label={<span><EnvironmentOutlined /> Thành phố {cities.length === 0 && <span style={{color: 'red'}}>({cities.length} available)</span>}</span>}
               rules={[{ required: true, message: 'Vui lòng chọn thành phố' }]}
             >
-              <Select placeholder="Chọn thành phố" onChange={handleCityChange}>
-                {cities.map(city => (
-                  <Option key={city.id} value={city.id}>{city.name}</Option>
-                ))}
-              </Select>
+               <Select 
+                 placeholder={cities.length === 0 ? "Không có thành phố nào (đang tải...)" : "Chọn thành phố"} 
+                 onChange={handleCityChange}
+                 disabled={cities.length === 0}
+               >
+                  {cities && cities.length > 0 ? (
+                    cities.map(city => (
+                      <Option key={city.cityID} value={city.cityID}>{city.name}</Option>
+                    ))
+                  ) : (
+                    <Option disabled>Đang tải dữ liệu thành phố...</Option>
+                  )}
+                </Select>
             </Form.Item>
           </Col>
           <Col span={8}>
@@ -250,7 +257,7 @@ const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
         <Form.Item
           label={<span><CalendarOutlined /> Ngày chiếu</span>}
           required
-          extra="Chọn nhiều ngày, mỗi ngày áp dụng gợi ý riêng."
+          extra="Chọn nhiều ngày chiếu."
         >
           <Checkbox.Group
             options={availableDates.map(date => ({ label: date, value: date }))}
@@ -265,77 +272,27 @@ const ShowTimeCreate = ({ visible, onCancel, onSuccess, movieId }) => {
             label={
               <span>
                 <ClockCircleOutlined /> Giờ chiếu cho ngày <b>{date}</b>
-                <Button
-                  size="small"
-                  style={{ marginLeft: 12 }}
-                  onClick={() => handleApplySuggest(date)}
-                >
-                  Áp dụng giờ gợi ý
-                </Button>
               </span>
             }
             required
             style={{ marginBottom: 0 }}
-            extra={
-              suggestedTimes[date]?.length > 0
-                ? (
-                  <span>
-                    Giờ gợi ý:&nbsp;
-                    {suggestedTimes[date]
-                      .map(
-                        t =>
-                          `${t.startTime?.slice(0, 5)} - ${t.endTime?.slice(0, 5)}`
-                      )
-                      .join(', ')}
-                    <br />
-                    Bạn có thể chỉnh sửa, xóa hoặc thêm giờ mới.
-                  </span>
-                )
-                : "Bạn có thể thêm nhiều giờ chiếu cho ngày này."
-            }
+            extra="Bạn có thể thêm nhiều giờ chiếu cho ngày này."
           >
             <Form.List name={['times', date]}>
               {(fields, { add, remove }) => (
                 <Row gutter={8} align="middle">
-                  {fields.map((field, idx) => {
-                    let endTime = null;
-                    const suggested = suggestedTimes[date];
-                    const value = form.getFieldValue(['times', date, field.name]);
-                    if (suggested && value) {
-                      const found = suggested.find(
-                        t => dayjs(t.startTime, 'HH:mm:ss').format('HH:mm') === dayjs(value).format('HH:mm')
-                      );
-                      if (found) endTime = found.endTime;
-                    }
+                  {fields.map((field) => {
                     return (
                       <Col key={field.key}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                          {endTime ? (
-                            <div
-                              style={{
-                                border: '1px solid #d9d9d9',
-                                borderRadius: 6,
-                                padding: '4px 12px',
-                                minWidth: 90,
-                                background: '#fafafa',
-                                fontSize: 15,
-                                height: 32,
-                                display: 'flex',
-                                alignItems: 'center'
-                              }}
-                            >
-                              {`${dayjs(value).format('HH:mm')} - ${dayjs(endTime, 'HH:mm:ss').format('HH:mm')}`}
-                            </div>
-                          ) : (
-                            <Form.Item
-                              key={field.key}
-                              {...field}
-                              rules={[{ required: true, message: 'Vui lòng chọn giờ chiếu' }]}
-                              noStyle
-                            >
-                              <TimePicker format="HH:mm" />
-                            </Form.Item>
-                          )}
+                          <Form.Item
+                            key={field.key}
+                            {...field}
+                            rules={[{ required: true, message: 'Vui lòng chọn giờ chiếu' }]}
+                            noStyle
+                          >
+                            <TimePicker format="HH:mm" />
+                          </Form.Item>
                           <Tooltip title="Xóa giờ này">
                             <Button
                               type="link"

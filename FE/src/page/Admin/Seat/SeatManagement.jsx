@@ -1,15 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { Modal, Tooltip, Button, Select, Input } from "antd";
+import { Modal, Tooltip, Button, Select } from "antd";
 import { getAllSeats, toggleSeatAvailability } from "../../../service/seat";
 import AddSeat from "./AddSeat";
 import EditSeat from "./EditSeat";
-import { EditOutlined, HomeOutlined, InboxOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { HomeOutlined, InboxOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { showSuccessToast, showErrorToast } from "../../../utils/toast";
 
-const { Search } = Input;
+const normalizeSeatType = (seatType) => String(seatType || "").toLowerCase();
+const isVipSeat = (seatType) => normalizeSeatType(seatType).includes("vip");
+const isDoubleSeat = (seatType) => normalizeSeatType(seatType).includes("double") || normalizeSeatType(seatType).includes("doi");
+const getSeatFillClass = (seatType) => {
+  if (isVipSeat(seatType)) return "bg-yellow-200 text-yellow-900 shadow-[0_0_8px_2px_rgba(255,193,7,0.3)]";
+  if (isDoubleSeat(seatType)) return "bg-purple-200 text-purple-900 shadow-[0_0_8px_2px_rgba(168,85,247,0.25)]";
+  return "bg-gray-200 text-gray-700";
+};
+const getSeatTypeLabel = (seatType) => {
+  if (isVipSeat(seatType)) return "VIP";
+  if (isDoubleSeat(seatType)) return "Ghế đôi";
+  return seatType || "Thường";
+};
 
 const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
-  const [loading, setLoading] = useState(false);
   const [seatData, setSeatData] = useState([]);
   const [flatSeats, setFlatSeats] = useState([]);
   const [cityFilter, setCityFilter] = useState("");
@@ -32,7 +43,6 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
 
   // Lấy dữ liệu ghế và flatten để dễ render
   const fetchSeats = async ({ page = 1, pageSize = 6, search = searchText, city = cityFilter, cinema = cinemaFilter, room = roomFilter } = {}) => {
-    setLoading(true);
     try {
       const res = await getAllSeats();
       if (res.success) {
@@ -132,7 +142,6 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
       setAllRooms([]);
       setPagination(prev => ({ ...prev, total: 0 }));
     }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -329,7 +338,7 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredRooms.map((room, idx) => (
+          {filteredRooms.map((room) => (
             <div key={room.cinemaRoomID} className="bg-gradient-to-br from-white via-blue-50 to-indigo-100 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] relative overflow-hidden border-gray-200 hover:border-blue-300">
               {/* Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-100 to-indigo-100">
@@ -381,6 +390,10 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
                     <span className="text-xs text-gray-600">VIP</span>
                   </div>
                   <div className="flex items-center gap-1">
+                    <div className="w-4 h-4 rounded bg-purple-200 border border-purple-500 shadow-[0_0_8px_2px_rgba(168,85,247,0.25)]" />
+                    <span className="text-xs text-gray-600">Ghế đôi</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     <div className="w-4 h-4 rounded bg-gray-200 border border-red-400 opacity-50" />
                     <span className="text-xs text-gray-600">Khóa</span>
                   </div>
@@ -414,10 +427,10 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
                                     <div
                                       key={seat.seatID}
                                       className={`w-8 h-8 flex items-center justify-center rounded font-bold border text-xs cursor-pointer transition-all duration-200
-                                        ${seat.seatType === 'VIP' ? 'bg-yellow-200 text-yellow-900 shadow-[0_0_8px_2px_rgba(255,193,7,0.3)]' : 'bg-gray-200 text-gray-700'}
+                                        ${getSeatFillClass(seat.seatType)}
                                         ${seat.isAvailable ? 'border-green-400 hover:scale-110 hover:shadow-lg hover:border-blue-400' : 'border-red-400 opacity-50'}
                                       `}
-                                      title={`${seat.seatName} - ${seat.seatType === 'Normal' ? 'Thường' : 'VIP'} - ${seat.price?.toLocaleString()} đ`}
+                                      title={`${seat.seatName} - ${getSeatTypeLabel(seat.seatType)} - ${seat.price?.toLocaleString()} đ`}
                                       onClick={() => handleSeatToggle(seat)}
                                     >
                                       {seat.seatName}

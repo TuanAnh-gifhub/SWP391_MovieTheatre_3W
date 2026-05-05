@@ -28,6 +28,7 @@ import PaymentMethod from "../page/Customer/Payment/PaymentMethod";
 import PaymentSuccess from "../page/Customer/Payment/PaymentSuccess";
 import TheaterManagement from "../page/Admin/TheaterManagement/TheaterManagement";
 import SeatManagement from "../page/Admin/Seat/SeatManagement";
+import SeatTypeManagement from "../page/Admin/SeatType/SeatTypeManagement";
 import VoucherPage from "../page/Admin/Voucher/VoucherPage"; 
 import FoodAndDrinkManagement from "../page/Admin/FoodAndDrink/FoodAndDrinkManagement";
 
@@ -176,6 +177,10 @@ export const router = createBrowserRouter([
         path: "seats",
         element: <SeatManagement />,
       },
+        {
+          path: "seat-types",
+          element: <SeatTypeManagement />,
+        },
       {
         path: "vouchers", 
         element: <VoucherPage />, 

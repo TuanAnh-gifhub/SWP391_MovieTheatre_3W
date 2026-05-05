@@ -33,6 +33,10 @@ public class Seat {
     @Column(length = 20, nullable = false)
     private String seatType;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seat_type_id")
+    private SeatType seatTypeRef;
+
     @Size(max = 20)
     @Column(length = 20, nullable = true)
     private String status;
@@ -52,5 +56,24 @@ public class Seat {
 
     @OneToMany(mappedBy = "seat")
     private List<TicketDetail> ticketDetails;
+
+    @Transient
+    public String getSeatTypeLabel() {
+        if (seatTypeRef != null && seatTypeRef.getName() != null && !seatTypeRef.getName().isBlank()) {
+            return seatTypeRef.getName();
+        }
+        return seatType;
+    }
+
+    @Transient
+    public Double getEffectivePrice() {
+        if (price != null) {
+            return price;
+        }
+        if (seatTypeRef != null && seatTypeRef.getBasePrice() != null) {
+            return seatTypeRef.getBasePrice();
+        }
+        return 0.0;
+    }
 }
 

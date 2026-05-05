@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { updateSeat } from "../../../service/seat";
+import { updateSeat, getAllSeatTypes } from "../../../service/seat";
 import { getAllCinemaRooms } from "../../../service/cinemaroom";
 import { toast } from "react-toastify";
 
@@ -7,9 +7,19 @@ const EditSeat = ({ seat, onSuccess, onClose }) => {
   const [cinemaRooms, setCinemaRooms] = useState([]);
   const [cinemaRoomId, setCinemaRoomId] = useState(seat?.cinemaRoomID || seat?.cinemaRoomId || "");
   const [seatName, setSeatName] = useState(seat?.seatName || "");
-  const [seatType, setSeatType] = useState(seat?.seatType || "Normal");
+  const [seatTypes, setSeatTypes] = useState([]);
+  const [seatTypeId, setSeatTypeId] = useState(seat?.seatTypeId || "");
   const [price, setPrice] = useState(seat?.price || 10000);
   const [loading, setLoading] = useState(false);
+
+  const resolveSeatTypeId = (seatTypeLabel, types) => {
+    if (!seatTypeLabel) return "";
+    const found = types.find(type =>
+      type.code?.toLowerCase() === String(seatTypeLabel).toLowerCase() ||
+      type.name?.toLowerCase() === String(seatTypeLabel).toLowerCase()
+    );
+    return found?.seatTypeID || "";
+  };
 
   useEffect(() => {
     getAllCinemaRooms().then(res => {
@@ -23,6 +33,19 @@ const EditSeat = ({ seat, onSuccess, onClose }) => {
           }
         });
         setCinemaRooms(uniqueRooms);
+      }
+    });
+    getAllSeatTypes().then(res => {
+      if (res.success && Array.isArray(res.data)) {
+        setSeatTypes(res.data);
+        const matchedId = resolveSeatTypeId(seat?.seatType, res.data);
+        const defaultType = res.data.find(type => type.seatTypeID === matchedId) || res.data[0];
+        if (defaultType) {
+          setSeatTypeId(defaultType.seatTypeID);
+          if (!seat?.price) {
+            setPrice(defaultType.basePrice);
+          }
+        }
       }
     });
   }, []);
@@ -42,7 +65,8 @@ const EditSeat = ({ seat, onSuccess, onClose }) => {
       cinemaRoomId: Number(cinemaRoomId),
       seatId: seat.seatID || seat.seatId,
       seatName,
-      seatType,
+      seatTypeId: Number(seatTypeId),
+      seatType: seatTypes.find(type => type.seatTypeID === Number(seatTypeId))?.code || seatTypes.find(type => type.seatTypeID === Number(seatTypeId))?.name,
       price: Number(price),
     });
     setLoading(false);
@@ -87,11 +111,22 @@ const EditSeat = ({ seat, onSuccess, onClose }) => {
             <label className="block mb-1">Loại ghế</label>
             <select
               className="border rounded px-3 py-2"
-              value={seatType}
-              onChange={e => setSeatType(e.target.value)}
+              value={seatTypeId}
+              onChange={e => {
+                const nextTypeId = Number(e.target.value);
+                setSeatTypeId(nextTypeId);
+                const selectedType = seatTypes.find(type => type.seatTypeID === nextTypeId);
+                if (selectedType) {
+                  setPrice(selectedType.basePrice);
+                }
+              }}
             >
-              <option value="Normal">Thường</option>
-              <option value="VIP">VIP</option>
+              <option value="">-- Chọn loại ghế --</option>
+              {seatTypes.map(type => (
+                <option key={type.seatTypeID} value={type.seatTypeID}>
+                  {type.name} ({Number(type.basePrice || 0).toLocaleString("vi-VN")}đ)
+                </option>
+              ))}
             </select>
           </div>
           <div>

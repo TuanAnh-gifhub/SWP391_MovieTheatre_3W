@@ -11,6 +11,7 @@ import {
   PlayCircleOutlined, 
   ApartmentOutlined,
   CoffeeOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
 
 const { Sider } = Layout;
@@ -51,14 +52,19 @@ const Sidebar = ({ collapsed, theme }) => {
       label: <Link to="/admin/movie">Quản lý Phim</Link>,
     },
     {
-      key: "/admin/vouchers",
-      icon: <GiftOutlined />,
-      label: <Link to="/admin/vouchers">Quản lý khuyến mãi</Link>,
-    },
-    {
       key: "/admin/theater",
       icon: <ApartmentOutlined />,
       label: <Link to="/admin/theater">Quản lý rạp phim</Link>,
+    },
+    {
+      key: "/admin/seat-types",
+      icon: <TagsOutlined />,
+      label: <Link to="/admin/seat-types">Loại ghế</Link>,
+    },
+    {
+      key: "/admin/vouchers",
+      icon: <GiftOutlined />,
+      label: <Link to="/admin/vouchers">Quản lý khuyến mãi</Link>,
     },
 
     {
@@ -94,14 +100,19 @@ const Sidebar = ({ collapsed, theme }) => {
       label: <Link to="/admin/movie">Quản lý Phim</Link>,
     },
     {
-      key: "/admin/vouchers",
-      icon: <GiftOutlined />,
-      label: <Link to="/admin/vouchers">Quản lý khuyến mãi (Coupon)</Link>,
-    },
-    {
       key: "/admin/theater",
       icon: <ApartmentOutlined />,
       label: <Link to="/admin/theater">Quản lý rạp phim</Link>,
+    },
+    {
+      key: "/admin/seat-types",
+      icon: <TagsOutlined />,
+      label: <Link to="/admin/seat-types">Loại ghế</Link>,
+    },
+    {
+      key: "/admin/vouchers",
+      icon: <GiftOutlined />,
+      label: <Link to="/admin/vouchers">Quản lý khuyến mãi</Link>,
     },
     // Loyalty link removed (feature disabled)
     {
