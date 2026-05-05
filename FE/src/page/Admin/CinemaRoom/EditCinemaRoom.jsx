@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Form, Input, InputNumber, Select } from "antd";
-import { updateCinemaRoom, getAllCinemaRooms } from "../../../service/cinemaroom";
+import { updateCinemaRoom } from "../../../service/cinemaroom";
+import { getAllCinemas } from "../../../service/cinema";
 import { showSuccessToast, showErrorToast } from "../../../utils/toast";
 import { VideoCameraOutlined, HomeOutlined } from "@ant-design/icons";
 
@@ -10,28 +11,33 @@ const EditCinemaRoom = ({ room, onSuccess, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getAllCinemaRooms().then(res => {
+    getAllCinemas().then(res => {
       if (res.success && Array.isArray(res.data)) {
-        const uniqueCinemas = [];
-        const cinemaMap = {};
-        res.data.forEach(r => {
-          if (r.cinemaId && r.name && !cinemaMap[r.cinemaId]) {
-            cinemaMap[r.cinemaId] = true;
-            uniqueCinemas.push({ id: r.cinemaId, name: r.name });
-          }
-        });
-        setCinemas(uniqueCinemas);
+        setCinemas(res.data.map(cinema => ({ id: cinema.cinemaId, name: cinema.name })));
       }
     });
   }, []);
 
+  useEffect(() => {
+    form.setFieldsValue({
+      roomName: room?.roomName || "",
+      seatQuantity: room?.seatQuantity || 1,
+      cinemaId: room?.cinemaId || "",
+    });
+  }, [room, form]);
+
   const handleSubmit = async () => {
     try {
+      if (!room?.cinemaRoomId) {
+        showErrorToast("Không tìm thấy phòng chiếu để cập nhật!");
+        return;
+      }
+
       const values = await form.validateFields();
       setLoading(true);
 
       const payload = {
-        roomName: [values.roomName],
+        roomName: [values.roomName?.trim()],
         seatQuantity: Number(values.seatQuantity),
         cinemaId: Number(values.cinemaId),
       };
@@ -59,9 +65,7 @@ const EditCinemaRoom = ({ room, onSuccess, onClose }) => {
         form={form}
         layout="vertical"
         initialValues={{
-          roomName: room?.roomName || "",
-          seatQuantity: room?.seatQuantity || 1,
-          cinemaId: room?.cinemaId || "",
+          seatQuantity: 1,
         }}
         className="space-y-4"
       >

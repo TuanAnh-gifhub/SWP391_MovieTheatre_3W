@@ -11,22 +11,30 @@ import movie.swp391.repository.*;
 import movie.swp391.repository.*;
 import movie.swp391.request.CreateSeatRequest;
 import movie.swp391.request.UpdateSeatRequest;
+import movie.swp391.request.UpdateSeatTypeBatchRequest;
 import movie.swp391.response.SeatFromCityresponse;
 import movie.swp391.service.SeatService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 
 public class SeatServiceImpl implements SeatService {
+
+    private static final Pattern SEAT_NAME_PATTERN = Pattern.compile("^([A-Za-z]+)(\\d+)$");
 
     CityRepository cityRepository;
     CinemaRoomRepository cinemaRoomRepository;
@@ -172,6 +180,58 @@ public class SeatServiceImpl implements SeatService {
     }
 
     @Override
+    @Transactional
+    public String updateSeatTypeBatch(UpdateSeatTypeBatchRequest request) {
+        if (request == null || request.getCinemaRoomId() == null) {
+            throw new AppException(ErrorHandler.INVALID_INPUT, "Thiếu thông tin phòng chiếu");
+        }
+        if (request.getSeatIds() == null || request.getSeatIds().isEmpty()) {
+            throw new AppException(ErrorHandler.INVALID_INPUT, "Vui lòng chọn ít nhất 1 ghế");
+        }
+
+        CinemaRoom room = cinemaRoomRepository.findById(request.getCinemaRoomId())
+                .orElseThrow(() -> new AppException(ErrorHandler.CINEMA_ROOM_NOT_FOUND));
+
+        List<Seat> seats = seatRepository.findAllById(request.getSeatIds());
+        if (seats.size() != request.getSeatIds().size()) {
+            throw new AppException(ErrorHandler.SEAT_NOT_FOUND, "Có ghế không tồn tại");
+        }
+
+        for (Seat seat : seats) {
+            if (seat.getCinemaRoom() == null || !Objects.equals(seat.getCinemaRoom().getCinemaRoomID(), room.getCinemaRoomID())) {
+                throw new AppException(ErrorHandler.SEAT_NOT_BELONG);
+            }
+        }
+
+        SeatType resolvedType = resolveSeatType(request.getSeatTypeId(), request.getSeatType());
+        if (resolvedType == null && (request.getSeatType() == null || request.getSeatType().isBlank())) {
+            throw new AppException(ErrorHandler.SEAT_TYPE_NOT_FOUND);
+        }
+
+        String nextTypeLabel = resolveSeatTypeLabel(resolvedType, request.getSeatType());
+        boolean isDoubleTarget = isDoubleSeatLabel(nextTypeLabel)
+                || isDoubleSeatLabel(resolvedType != null ? resolvedType.getCode() : null)
+                || isDoubleSeatLabel(resolvedType != null ? resolvedType.getName() : null);
+
+        if (isDoubleTarget) {
+            validateDoubleSeatSelection(seats);
+        }
+
+        for (Seat seat : seats) {
+            seat.setSeatType(nextTypeLabel);
+            seat.setSeatTypeRef(resolvedType);
+            if (request.getPrice() != null) {
+                seat.setPrice(request.getPrice());
+            } else if (resolvedType != null) {
+                seat.setPrice(resolvedType.getBasePrice());
+            }
+        }
+
+        seatRepository.saveAll(seats);
+        return "Đã cập nhật thành công " + seats.size() + " ghế";
+    }
+
+    @Override
     public void turnOnOffSeat(List<Integer> seatId){
         List<Seat> seats = seatRepository.findAllById(seatId);
 
@@ -263,6 +323,65 @@ public class SeatServiceImpl implements SeatService {
             return seat.getSeatTypeRef().getBasePrice();
         }
         return 0.0;
+    }
+
+    private void validateDoubleSeatSelection(List<Seat> selectedSeats) {
+        if (selectedSeats.size() != 2) {
+            throw new AppException(ErrorHandler.INVALID_INPUT, "Ghế đôi yêu cầu chọn đúng 2 ghế");
+        }
+
+        SeatPosition first = extractSeatPosition(selectedSeats.get(0));
+        SeatPosition second = extractSeatPosition(selectedSeats.get(1));
+        if (first == null || second == null || !first.row.equals(second.row)) {
+            throw new AppException(ErrorHandler.INVALID_INPUT, "2 ghế đôi phải nằm cùng một hàng ngang");
+        }
+        if (Math.abs(first.column - second.column) != 1) {
+            throw new AppException(ErrorHandler.INVALID_INPUT, "2 ghế đôi phải có số ghế liền kề (ví dụ C1 + C2)");
+        }
+    }
+
+    private SeatPosition extractSeatPosition(Seat seat) {
+        if (seat == null) {
+            return null;
+        }
+
+        String seatName = seat.getSeatName();
+        if (seatName != null) {
+            Matcher matcher = SEAT_NAME_PATTERN.matcher(seatName.trim());
+            if (matcher.matches()) {
+                return new SeatPosition(
+                        matcher.group(1).toUpperCase(),
+                        Integer.parseInt(matcher.group(2))
+                );
+            }
+        }
+
+        if (seat.getRow() != null && seat.getColumn() != null) {
+            return new SeatPosition(seat.getRow().toUpperCase(), seat.getColumn());
+        }
+
+        return null;
+    }
+
+    private boolean isDoubleSeatLabel(String seatTypeValue) {
+        if (seatTypeValue == null || seatTypeValue.isBlank()) {
+            return false;
+        }
+        String normalized = Normalizer.normalize(seatTypeValue, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase()
+                .trim();
+        return normalized.contains("double") || normalized.contains("doi");
+    }
+
+    private static class SeatPosition {
+        private final String row;
+        private final int column;
+
+        private SeatPosition(String row, int column) {
+            this.row = row;
+            this.column = column;
+        }
     }
 
 } 

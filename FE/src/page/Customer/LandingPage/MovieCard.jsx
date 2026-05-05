@@ -1,50 +1,6 @@
-import { useNavigate } from "react-router-dom";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
-import { useEffect, useState } from "react";
-import { toggleFavoriteMovie, getFavoriteMovies } from "../../../service/wishlist";
-import { toast } from "react-toastify";
 /* eslint-disable react/prop-types */
 
-const MovieCard = ({ tag, title, description, genre, duration, imgSrc, slug, movieId }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  useEffect(() => {
-    const fetchWishlist = async () => {
-      const res = await getFavoriteMovies();
-      if (!res.error && Array.isArray(res.result)) {
-        // So sánh bằng slug (normalize title)
-        const normalize = (str) =>
-          str
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/\s+/g, "_");
-        setIsFavorite(
-          res.result.some((item) => normalize(item.title || item.movieTitle) === slug)
-        );
-      }
-    };
-    fetchWishlist();
-  }, [slug]);
-
-  const handleFavoriteClick = async (e) => {
-    e.stopPropagation();
-    e.preventDefault(); // Ngăn chuyển trang khi click icon
-    const customerId = Number(localStorage.getItem("id"));
-    if (!customerId) {
-      toast.error("Bạn cần đăng nhập để sử dụng chức năng này!");
-      return;
-    }
-    // Truyền đúng movieId
-    const res = await toggleFavoriteMovie({ movieId, customerId });
-    if (!res.error) {
-      setIsFavorite((prev) => !prev);
-      toast.success(isFavorite ? "Đã xóa khỏi danh sách yêu thích!" : "Đã thêm vào danh sách yêu thích!");
-    } else {
-      toast.error(res.message || "Cập nhật danh sách yêu thích thất bại!");
-    }
-  };
-
+const MovieCard = ({ tag, title, description, genre, duration, imgSrc }) => {
   return (
     <div
       className="group cursor-pointer relative flex flex-col items-center text-center bg-white p-2 sm:p-3 md:p-4 rounded-2xl min-h-[280px] w-full max-w-[95vw] sm:max-w-[320px] md:max-w-[260px] lg:max-w-[210px] xl:max-w-xs border-2 border-[#ff7120] shadow-lg hover:shadow-2xl hover:scale-105 hover:border-orange-600 transition-all duration-300 font-mono text-[#0e0e0e] text-base leading-[1.4]"
@@ -100,16 +56,6 @@ const MovieCard = ({ tag, title, description, genre, duration, imgSrc, slug, mov
         </button>
       </div>
 
-      {/* Favorite Button */}
-      <div className="absolute top-3 right-3 z-10">
-        <button
-          className="text-xl text-[#ff7120] hover:text-red-500 transition"
-          title={isFavorite ? "Bỏ khỏi yêu thích" : "Thêm vào yêu thích"}
-          onClick={handleFavoriteClick}
-        >
-          {isFavorite ? <FaHeart /> : <FaRegHeart />}
-        </button>
-      </div>
     </div>
   );
 };

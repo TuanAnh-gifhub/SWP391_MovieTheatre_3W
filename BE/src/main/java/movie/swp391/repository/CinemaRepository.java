@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface CinemaRepository extends JpaRepository<Cinema, Integer> {
   @Query("SELECT td.name FROM Cinema td " +
@@ -17,4 +18,10 @@ public interface CinemaRepository extends JpaRepository<Cinema, Integer> {
   List<String> findCinemaByMovieIDAndDate(@Param("movieId") Integer movieId, @Param("date") LocalDate date);
 
   List<Cinema> findByCity_NameIgnoreCase(String cityName);
+
+  Optional<Cinema> findByNameIgnoreCaseAndAddressIgnoreCaseAndCity_CityID(String name, String address, Integer cityId);
+
+  boolean existsByNameIgnoreCaseAndAddressIgnoreCaseAndCity_CityID(String name, String address, Integer cityId);
+
+  boolean existsByNameIgnoreCaseAndAddressIgnoreCaseAndCity_CityIDAndCinemaIDNot(String name, String address, Integer cityId, Integer cinemaId);
 }

@@ -13,6 +13,7 @@ import movie.swp391.response.CustomerResponse;
 import movie.swp391.response.ViewScoreHistoryResponse;
 import movie.swp391.response.common.BaseResponse;
 import movie.swp391.service.MemberService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
@@ -41,6 +42,10 @@ public class MemberController {
     public ResponseEntity<BaseResponse<Void>> editProfile(
             @RequestBody @Valid UpdateProfileRequest request,
             Principal principal) {
+        if (principal == null || principal.getName() == null || "anonymousUser".equalsIgnoreCase(principal.getName())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new BaseResponse<>("Vui lòng đăng nhập lại", false, null));
+        }
         return memberService.editProfile(principal.getName(), request);
     }
 

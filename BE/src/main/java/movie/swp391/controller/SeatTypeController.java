@@ -40,7 +40,7 @@ public class SeatTypeController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public ApiResponse<SeatTypeResponse> createSeatType(@Valid @RequestBody SeatTypeRequest request) {
         return ApiResponse.<SeatTypeResponse>builder()
                 .result(seatTypeService.createSeatType(request))
@@ -50,7 +50,7 @@ public class SeatTypeController {
     }
 
     @PutMapping("/{seatTypeId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public ApiResponse<SeatTypeResponse> updateSeatType(@PathVariable Integer seatTypeId, @Valid @RequestBody SeatTypeRequest request) {
         return ApiResponse.<SeatTypeResponse>builder()
                 .result(seatTypeService.updateSeatType(seatTypeId, request))
@@ -60,7 +60,7 @@ public class SeatTypeController {
     }
 
     @DeleteMapping("/{seatTypeId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     public ApiResponse<String> deleteSeatType(@PathVariable Integer seatTypeId) {
         seatTypeService.deleteSeatType(seatTypeId);
         return ApiResponse.<String>builder()

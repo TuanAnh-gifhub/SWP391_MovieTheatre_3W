@@ -17,6 +17,8 @@ public interface CouponRepository extends JpaRepository<Coupon, Integer> {
 
     List<Coupon> findByIsGameTrueAndExpirationDateAfter(LocalDateTime now);
 
+      List<Coupon> findByIsGameTrueAndExpirationDateAfterAndIsActiveTrue(LocalDateTime now);
+
 
   List<Coupon> findByIsGameTrueAndExpirationDateAfterAndUsageLimitGreaterThan(LocalDateTime now, int i);
 }

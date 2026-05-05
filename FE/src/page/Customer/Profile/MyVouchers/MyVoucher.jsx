@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getScoreHistories, getAllPromotionsForCustomer } from "../../../../service/voucher/index";
+import { getScoreHistories, getAllPromotionsForCustomer, getMyGameCoupons } from "../../../../service/voucher/index";
 import { FiSearch, FiFilter } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -13,6 +13,7 @@ function getCustomerID() {
 const MyVoucher = (props) => {
   const [scoreHistories, setScoreHistories] = useState([]);
   const [vouchers, setVouchers] = useState([]);
+  const [gameCoupons, setGameCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(props.defaultTab || "score"); // "score" hoặc "voucher"
   const [search, setSearch] = useState("");
@@ -39,10 +40,14 @@ const MyVoucher = (props) => {
         if (activeTab === "voucher") {
           const promoRes = await getAllPromotionsForCustomer();
           setVouchers(Array.isArray(promoRes.result) ? promoRes.result : []);
+
+          const gameCouponRes = await getMyGameCoupons(customerID);
+          setGameCoupons(Array.isArray(gameCouponRes.result) ? gameCouponRes.result : []);
         }
       } catch (error) {
         setScoreHistories([]);
         setVouchers([]);
+        setGameCoupons([]);
       } finally {
         setLoading(false);
       }
@@ -72,6 +77,20 @@ const MyVoucher = (props) => {
   if (loading) {
     return <div className="text-center py-4">Đang tải dữ liệu...</div>;
   }
+
+  const getGameCouponStatusStyle = (status) => {
+    if (status === "ACTIVE") return "bg-green-100 text-green-700";
+    if (status === "USED") return "bg-gray-200 text-gray-600";
+    if (status === "EXPIRED") return "bg-red-100 text-red-600";
+    return "bg-yellow-100 text-yellow-700";
+  };
+
+  const getGameCouponStatusLabel = (status) => {
+    if (status === "ACTIVE") return "Khả dụng";
+    if (status === "USED") return "Đã dùng";
+    if (status === "EXPIRED") return "Hết hạn";
+    return "Không khả dụng";
+  };
 
   return (
     <>
@@ -353,6 +372,54 @@ const MyVoucher = (props) => {
                   </AnimatePresence>
                 </div>
               )}
+
+              <div className="mt-8">
+                <h3 className="text-xl font-bold mb-4 text-center text-gray-800">Voucher từ minigame</h3>
+                {gameCoupons.length === 0 ? (
+                  <div className="text-gray-600 text-center py-6 bg-gray-50 rounded-lg shadow">
+                    Bạn chưa nhận voucher minigame nào.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {gameCoupons.map((coupon, idx) => (
+                      <motion.div
+                        key={`${coupon.couponId}-${coupon.receivedAt || idx}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, delay: idx * 0.05 }}
+                        className="rounded-xl border border-orange-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <p className="font-semibold text-gray-800 line-clamp-1">{coupon.name || "Voucher minigame"}</p>
+                            <p className="text-xs text-gray-500">
+                              Nhận lúc: {coupon.receivedAt ? new Date(coupon.receivedAt).toLocaleString("vi-VN") : "Không rõ"}
+                            </p>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getGameCouponStatusStyle(coupon.status)}`}>
+                            {getGameCouponStatusLabel(coupon.status)}
+                          </span>
+                        </div>
+
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mb-2">
+                          <p className="text-xs text-gray-500">Mã giảm giá</p>
+                          <p className="text-lg font-bold tracking-wide text-orange-600">{coupon.code}</p>
+                        </div>
+
+                        <div className="text-sm text-gray-700 space-y-1">
+                          <p>
+                            Giá trị: {coupon.discountValue}
+                            {coupon.discountType === "PERCENTAGE" ? "%" : "đ"}
+                          </p>
+                          <p>
+                            Hết hạn: {coupon.expirationDate ? new Date(coupon.expirationDate).toLocaleDateString("vi-VN") : "Không rõ"}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class UpdateProfileRequest {
@@ -33,6 +34,8 @@ public class UpdateProfileRequest {
 
     @NotBlank(message = "Address is required")
     private String address;
+
+    private List<String> favoriteGenres;
 }
 
 

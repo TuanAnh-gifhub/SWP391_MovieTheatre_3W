@@ -19,7 +19,6 @@ import TicketManagement from "../page/Admin/Ticket/TicketManagement";
 import MovieList from "../page/Customer/MoviePage/MovieList"; 
 import ShowTimeCreate from "../page/Admin/ShowTime/ShowTimeCreate";
 import ShowTimeManagement from "../page/Admin/ShowTime/ShowTimeManagement";
-import WishListManagement from "../page/Customer/WishList/WishListManagement"; 
 import VerifyOTP from "../page/Customer/LoginPage/VerifyOTP"; 
 import DashBoard from "../page/Admin/DashBoard/DashBoard";
 import CinemaRoomManagement from "../page/Admin/CinemaRoom/CinemaRoomManagement";
@@ -70,10 +69,6 @@ export const router = createBrowserRouter([
       {
         path: "/my-orders/:slug",
         element: <MyOrderedDetail />,
-      },
-      {
-        path: "wishlist",
-        element: <WishListManagement />,
       },
       {
         path: "/verify-otp",

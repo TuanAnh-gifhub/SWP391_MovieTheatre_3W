@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import movie.swp391.request.CreateSeatRequest;
 import movie.swp391.request.UpdateSeatRequest;
+import movie.swp391.request.UpdateSeatTypeBatchRequest;
 import movie.swp391.response.ApiResponse;
 import movie.swp391.response.SeatFromCityresponse;
 import movie.swp391.service.EmployeeService;
@@ -45,6 +46,16 @@ public class SeatController {
         String updatedSeat = seatService.updateSeat(request);
         return ApiResponse.<String>builder()
                 .result(updatedSeat)
+                .message("Successfully")
+                .status(200)
+                .build();
+    }
+
+    @PutMapping("/update-seat-type-batch")
+    public ApiResponse<String> updateSeatTypeBatch(@RequestBody UpdateSeatTypeBatchRequest request) {
+        String result = seatService.updateSeatTypeBatch(request);
+        return ApiResponse.<String>builder()
+                .result(result)
                 .message("Successfully")
                 .status(200)
                 .build();

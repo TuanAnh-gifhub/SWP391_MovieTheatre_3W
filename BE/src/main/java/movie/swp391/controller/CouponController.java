@@ -9,6 +9,7 @@ import movie.swp391.request.ApplyCouponRequest;
 import movie.swp391.request.CreateCouponRequest;
 import movie.swp391.response.ApiResponse;
 import movie.swp391.response.ApplyCouponResponse;
+import movie.swp391.response.GameCouponResponse;
 import movie.swp391.service.CouponService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -84,6 +85,15 @@ public class CouponController {
                 .build();
 
 
+    }
+
+    @GetMapping("/my-game-coupons/{customerId}")
+    public ApiResponse<List<GameCouponResponse>> getMyGameCoupons(@PathVariable Integer customerId) {
+        return ApiResponse.<List<GameCouponResponse>>builder()
+                .result(couponService.getMyGameCoupons(customerId))
+                .message("Success")
+                .status(200)
+                .build();
     }
 
     @DeleteMapping("/delete/{couponId}")

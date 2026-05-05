@@ -19,6 +19,7 @@ import movie.swp391.request.*;
 import movie.swp391.request.ApplyCouponRequest;
 import movie.swp391.request.CreateCouponRequest;
 import movie.swp391.response.ApplyCouponResponse;
+import movie.swp391.response.GameCouponResponse;
 import movie.swp391.service.CouponService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -101,7 +102,7 @@ public class CouponServiceImpl implements CouponService {
 
         double finalTotal = request.getOrderTotal() - discountAmount;
 
-            if (coupon.getUsageLimit() <= 0) {
+            if (!Boolean.TRUE.equals(coupon.getIsGame()) && coupon.getUsageLimit() <= 0) {
                 throw new AppException(ErrorHandler.COUPON_LIMIT_REACHED, "Mã coupon đã đạt giới hạn sử dụng.");
             }
 
@@ -140,26 +141,77 @@ public class CouponServiceImpl implements CouponService {
     }
     @Override
     public Coupon randomGameCoupon(Integer customerId){
-        List<Coupon> coupons = couponRepository.findByIsGameTrueAndExpirationDateAfterAndUsageLimitGreaterThan(LocalDateTime.now(), 0);
-        Customer customer = customerRepository.findById(customerId).orElseThrow(() -> new AppException(ErrorHandler.CUSTOMER_NOT_FOUND));
-        int randomIndex = ThreadLocalRandom.current().nextInt(coupons.size());
-
-        boolean viewUsed = couponViewUsageRepository.existsByCustomerAndCoupon(customer, coupons.get(randomIndex));
-        if (viewUsed) {throw new AppException(ErrorHandler.COUPON_ALREADY_USED, "bạn đang hack à");}
-        CouponViewUsage couponViewUsage = new CouponViewUsage();
-        couponViewUsage.setCustomer(customer);
-        couponViewUsage.setCoupon(coupons.get(randomIndex));
-        couponViewUsageRepository.save(couponViewUsage);
-        customer.setIsGamePlayed(true);
-        customer.setDateGameCheck(LocalDateTime.now());
-        customerRepository.save(customer);
+        List<Coupon> coupons = couponRepository.findByIsGameTrueAndExpirationDateAfterAndIsActiveTrue(LocalDateTime.now());
         if (coupons.isEmpty()) {
             throw new AppException(ErrorHandler.LIST_EMPTY, "Không có bất kì mã nào hiện tại");
         }
 
+        Customer customer = customerRepository.findById(customerId).orElseThrow(() -> new AppException(ErrorHandler.CUSTOMER_NOT_FOUND));
 
-        return coupons.get(randomIndex);
+        List<Coupon> availableCoupons = coupons.stream()
+                .filter(coupon -> !couponViewUsageRepository.existsByCustomerAndCoupon(customer, coupon))
+                .toList();
+
+        if (availableCoupons.isEmpty()) {
+            throw new AppException(ErrorHandler.COUPON_ALREADY_USED, "Bạn đã nhận hết mã thưởng hiện có. Vui lòng chờ mã mới.");
+        }
+
+        int randomIndex = ThreadLocalRandom.current().nextInt(availableCoupons.size());
+        Coupon selectedCoupon = availableCoupons.get(randomIndex);
+
+        CouponViewUsage couponViewUsage = new CouponViewUsage();
+        couponViewUsage.setCustomer(customer);
+        couponViewUsage.setCoupon(selectedCoupon);
+        couponViewUsageRepository.save(couponViewUsage);
+
+        customer.setIsGamePlayed(true);
+        customer.setDateGameCheck(LocalDateTime.now());
+        customerRepository.save(customer);
+
+        return selectedCoupon;
     }
+
+    @Override
+    public List<GameCouponResponse> getMyGameCoupons(Integer customerId) {
+        Customer customer = customerRepository.findById(customerId)
+                .orElseThrow(() -> new AppException(ErrorHandler.CUSTOMER_NOT_FOUND, "Khách hàng không tồn tại."));
+
+        return couponViewUsageRepository.findByCustomer_CustomerIDOrderByViewedAtDesc(customer.getCustomerID())
+                .stream()
+                .filter(viewUsage -> viewUsage.getCoupon() != null && Boolean.TRUE.equals(viewUsage.getCoupon().getIsGame()))
+                .map(viewUsage -> {
+                    Coupon coupon = viewUsage.getCoupon();
+                    boolean used = couponUsageRepository.existsByCustomerAndCoupon(customer, coupon);
+                    boolean expired = coupon.getExpirationDate() != null && coupon.getExpirationDate().isBefore(LocalDateTime.now());
+                    boolean inactive = !Boolean.TRUE.equals(coupon.getIsActive());
+
+                    String status;
+                    if (used) {
+                        status = "USED";
+                    } else if (expired) {
+                        status = "EXPIRED";
+                    } else if (inactive) {
+                        status = "INACTIVE";
+                    } else {
+                        status = "ACTIVE";
+                    }
+
+                    return GameCouponResponse.builder()
+                            .couponId(coupon.getId())
+                            .name(coupon.getName())
+                            .code(coupon.getCode())
+                            .discountType(coupon.getDiscountType())
+                            .discountValue(coupon.getDiscountValue())
+                            .expirationDate(coupon.getExpirationDate())
+                            .active(coupon.getIsActive())
+                            .receivedAt(viewUsage.getViewedAt())
+                            .used(used)
+                            .status(status)
+                            .build();
+                })
+                .toList();
+    }
+
     @Override
     @Transactional
     public void deleteCoupon(Integer couponId) {

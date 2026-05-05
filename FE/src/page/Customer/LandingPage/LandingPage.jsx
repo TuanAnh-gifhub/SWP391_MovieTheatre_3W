@@ -74,6 +74,7 @@ const LandingPage = () => {
     time: "",
   });
   const [bookingError, setBookingError] = useState("");
+  const [favoriteGenres, setFavoriteGenres] = useState([]);
   const [showGratitude, setShowGratitude] = useState(false);
   const [birthdayName, setBirthdayName] = useState("");
   const checkedBirthdayRef = useRef(false);
@@ -147,6 +148,23 @@ const LandingPage = () => {
   useEffect(() => {
     const interval = window.setInterval(() => setNowTick(Date.now()), 60000);
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const syncFavoriteGenres = () => {
+      setFavoriteGenres(JSON.parse(localStorage.getItem("favoriteGenres") || "[]"));
+    };
+
+    syncFavoriteGenres();
+    window.addEventListener("favoriteGenresUpdated", syncFavoriteGenres);
+    window.addEventListener("storage", syncFavoriteGenres);
+    window.addEventListener("focus", syncFavoriteGenres);
+
+    return () => {
+      window.removeEventListener("favoriteGenresUpdated", syncFavoriteGenres);
+      window.removeEventListener("storage", syncFavoriteGenres);
+      window.removeEventListener("focus", syncFavoriteGenres);
+    };
   }, []);
 
   const visibleShowtimes = useMemo(() => {
@@ -234,6 +252,71 @@ const LandingPage = () => {
     slug: normalize(movie.title),
     movieId: movie.movieID, 
   });
+
+  const normalizeText = (value) =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const GENRE_ALIASES = {
+    "hanh dong": ["action"],
+    "phieu luu": ["adventure"],
+    "kinh di": ["horror"],
+    "tinh cam": ["romance", "romantic"],
+    "hai": ["comedy"],
+    "hoat hinh": ["animation", "animated"],
+    "khoa hoc vien tuong": ["science fiction", "sci-fi", "scifi"],
+    "tam ly": ["psychological", "drama"],
+    "gia dinh": ["family"],
+    "than thoai": ["fantasy", "mythology"],
+  };
+
+  const splitGenres = (genreText) =>
+    String(genreText || "")
+      .split(/[,/|;&]+/)
+      .map((item) => normalizeText(item))
+      .filter(Boolean);
+
+  const suggestedFeatureMovie = useMemo(() => {
+    const favoriteGenreSet = new Set((favoriteGenres || []).map((genre) => normalizeText(genre)).filter(Boolean));
+    if (!favoriteGenreSet.size || !Array.isArray(visibleShowtimes) || visibleShowtimes.length === 0) {
+      return null;
+    }
+
+    const isGenreMatched = (movieGenreTokens) => {
+      if (!movieGenreTokens.length) return false;
+      return movieGenreTokens.some((token) => {
+        if (favoriteGenreSet.has(token)) return true;
+        return Object.entries(GENRE_ALIASES).some(([viGenre, aliases]) =>
+          (favoriteGenreSet.has(viGenre) && aliases.includes(token)) ||
+          (aliases.some((alias) => favoriteGenreSet.has(alias)) && token === viGenre)
+        );
+      });
+    };
+
+    const movieMap = new Map(movies.map((movie) => [String(movie.movieID), movie]));
+    const now = new Date();
+
+    const candidates = visibleShowtimes
+      .map((showtime) => {
+        const movie = movieMap.get(String(showtime.movieId));
+        if (!movie) return null;
+
+        const showtimeAt = new Date(`${showtime.showDate}T${showtime.showTime}`);
+        if (Number.isNaN(showtimeAt.getTime()) || showtimeAt <= now) return null;
+
+        const movieGenres = splitGenres(movie.genre);
+        if (!isGenreMatched(movieGenres)) return null;
+
+        return { movie, showtimeAt };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.showtimeAt - b.showtimeAt);
+
+    return candidates[0]?.movie || null;
+  }, [favoriteGenres, visibleShowtimes, movies]);
 
   const fadeIn = {
     hidden: { opacity: 0, y: 50 },
@@ -498,9 +581,9 @@ const LandingPage = () => {
     }
   }, []);
 
-  const topSellerMovie = movies.length
-  ? movies.reduce((max, m) => (Number(m.seller || 0) > Number(max.seller || 0) ? m : max), movies[0])
-  : null;
+  const topSellerMovie = suggestedFeatureMovie || (movies.length
+    ? movies.reduce((max, m) => (Number(m.seller || 0) > Number(max.seller || 0) ? m : max), movies[0])
+    : null);
 
   // Khi người dùng chuyển dark mode, lưu vào localStorage
   const handleToggleDarkMode = () => {

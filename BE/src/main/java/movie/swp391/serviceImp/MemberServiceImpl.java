@@ -111,7 +111,10 @@ public class MemberServiceImpl implements MemberService {
     }
     @Override
      public CustomerResponse viewCustomerProfile(Integer customerId){
-        CustomerResponse   customerResponse = customerRepository.findById(customerId).map(customerMapper::toCustomerResponse).orElseThrow(() -> new AppException(ErrorHandler.USER_NOT_EXISTED));
+          Customer customer = customerRepository.findById(customerId)
+                  .orElseThrow(() -> new AppException(ErrorHandler.USER_NOT_EXISTED));
+          CustomerResponse customerResponse = customerMapper.toCustomerResponse(customer);
+            customerResponse.setFavoriteGenres(List.of());
         return customerResponse;
     }
 

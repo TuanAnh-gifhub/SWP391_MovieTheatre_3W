@@ -36,4 +36,5 @@ public class CustomerResponse {
     Integer finalScore;
     List<TicketBooking> bookings;
     List<ScoreHistory> scoreHistories;
+    List<String> favoriteGenres;
 }

@@ -25,7 +25,7 @@ public class CinemaServiceImpl implements CinemaService {
                         .cinemaId(cinema.getCinemaID())
                         .name(cinema.getName())
                         .address(cinema.getAddress())
-                        .city(cinema.getCity().getName())
+                        .city(cinema.getCity() != null ? cinema.getCity().getName() : null)
                         .build())
                 .collect(Collectors.toList());
         return new BaseResponse<>("Successfully retrieved all cinemas", true, cinemaResponses);

@@ -1,10 +1,14 @@
 import { instance } from "../instance";
 
+const getAdminToken = () => {
+  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
+  return adminUser.token || localStorage.getItem("token") || "";
+};
+
 
  // Lấy tất cả phòng chiếu trong hệ thống
 export const getAllCinemaRooms = async () => {
-  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
-  const token = adminUser.token;
+  const token = getAdminToken();
   try {
     const response = await instance.get("/admin/cinema-rooms", {
       headers: {
@@ -27,8 +31,7 @@ export const getAllCinemaRooms = async () => {
 
 // Bật/tắt trạng thái phòng chiếu
 export const setActiveCinemaRoom = async (cinemaRoomId, active) => {
-  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
-  const token = adminUser.token;
+  const token = getAdminToken();
   try {
     const response = await instance.put(
       `/admin/cinema-rooms/${cinemaRoomId}/set-active?active=${active}`,
@@ -53,8 +56,7 @@ export const setActiveCinemaRoom = async (cinemaRoomId, active) => {
 
 // Tạo phòng chiếu mới
 export const createCinemaRoom = async ({ roomName, seatQuantity, cinemaId }) => {
-  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
-  const token = adminUser.token;
+  const token = getAdminToken();
   try {
     const response = await instance.post(
       "/admin/cinema-rooms",
@@ -81,8 +83,7 @@ export const createCinemaRoom = async ({ roomName, seatQuantity, cinemaId }) => 
 
 // Xóa phòng chiếu
 export const deleteCinemaRoom = async (cinemaRoomId) => {
-  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
-  const token = adminUser.token;
+  const token = getAdminToken();
   try {
     const response = await instance.delete(
       `/admin/cinema-rooms/${cinemaRoomId}`,
@@ -108,8 +109,7 @@ export const deleteCinemaRoom = async (cinemaRoomId) => {
 
 // Chỉnh sửa phòng chiếu
 export const updateCinemaRoom = async (cinemaRoomId, { roomName, seatQuantity, cinemaId }) => {
-  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "{}");
-  const token = adminUser.token;
+  const token = getAdminToken();
   try {
     const response = await instance.put(
       `/admin/cinema-rooms/${cinemaRoomId}`,

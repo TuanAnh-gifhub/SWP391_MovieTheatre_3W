@@ -50,7 +50,11 @@ public class Role {
     private LocalDateTime updatedAt;
 
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + this.roleName));
+        String normalizedRoleName = this.roleName == null ? "" : this.roleName.trim();
+        if (!normalizedRoleName.startsWith("ROLE_")) {
+            normalizedRoleName = "ROLE_" + normalizedRoleName;
+        }
+        return List.of(new SimpleGrantedAuthority(normalizedRoleName));
     }
 
     @Override

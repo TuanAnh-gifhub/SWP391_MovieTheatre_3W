@@ -549,6 +549,27 @@ export const chooseCouponGame = async (couponId) => {
 };
 
 /**
+ * Lấy danh sách coupon minigame mà customer đã nhận
+ * @param {number|string} customerId
+ * @returns {Promise<{status: number, message: string, result: Array}>}
+ */
+export const getMyGameCoupons = async (customerId) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await instance.get(`/coupon/my-game-coupons/${customerId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    return response.data;
+  } catch (error) {
+    return {
+      status: error.response?.status || 500,
+      message: error.response?.data?.message || "Không thể lấy voucher minigame",
+      result: [],
+    };
+  }
+};
+
+/**
  * Xóa coupon (admin)
  * @param {number} couponId
  * @returns {Promise<{status: number, message: string}>}

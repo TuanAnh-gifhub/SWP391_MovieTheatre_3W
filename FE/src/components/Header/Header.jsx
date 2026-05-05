@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useContext } from "react";
 import { FiSearch } from "react-icons/fi";
-import { FaHeart } from "react-icons/fa";
 import { FaArrowRightLong } from "react-icons/fa6";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import LoginModal from "../../page/Customer/LoginPage/LoginPage";
@@ -530,10 +529,6 @@ const Header = () => {
                 </>
               )}
             </div>
-            {/* Wishlist icon */}
-            <Link to="/wishlist" className="h-9 w-9 md:h-12 md:w-12 flex items-center justify-center rounded-full hover:bg-[#ff7120]/20 transition-colors">
-              <FaHeart size={20} className="md:text-[24px] text-[#ff3b6b]" />
-            </Link>
             {/* Profile/Login */}
             <div className="relative group" ref={menuRef}>
               {isLoggedIn ? (

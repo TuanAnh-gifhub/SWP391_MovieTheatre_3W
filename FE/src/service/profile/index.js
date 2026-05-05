@@ -33,12 +33,62 @@ export const updateProfile = async (data) => {
       },
       body: JSON.stringify(data),
     });
-    const result = await response.json();
-    return result;
+
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      result = null;
+    }
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: result?.message || "Cập nhật thông tin thất bại",
+      };
+    }
+
+    return {
+      success: result?.success === true,
+      message: result?.message || (result?.success ? "Cập nhật thông tin thành công" : "Cập nhật thông tin thất bại"),
+      data: result?.data,
+    };
   } catch (error) {
     console.error("Error updating profile:", error);
-    return null;
+    return {
+      success: false,
+      message: "Không thể kết nối máy chủ",
+    };
   }
+};
+
+const buildSeatLevelTickets = (rawOrders) => {
+  const orders = Array.isArray(rawOrders) ? rawOrders : rawOrders ? [rawOrders] : [];
+
+  return orders.flatMap((order) => {
+    const seats = Array.isArray(order?.seats) ? order.seats : [];
+
+    if (seats.length === 0) {
+      return [
+        {
+          ...order,
+          ticketId: String(order?.bookingId ?? ""),
+        },
+      ];
+    }
+
+    return seats.map((seat, index) => {
+      const seatKey = seat?.seatId ?? seat?.seatName ?? index;
+      return {
+        ...order,
+        // Unique ticket identity for profile page actions (detail/share/download)
+        ticketId: `${order?.bookingId ?? "booking"}-${seatKey}`,
+        bookingTotalPrice: order?.totalPrice,
+        totalPrice: seat?.price ?? order?.totalPrice,
+        seats: seat ? [seat] : [],
+      };
+    });
+  });
 };
 
 // Get Order History
@@ -55,7 +105,15 @@ export const getOrderHistory = async () => {
         },
       }
     );
-    return { data: response.data };
+
+    const normalizedTickets = buildSeatLevelTickets(response.data?.data);
+
+    return {
+      data: {
+        ...response.data,
+        data: normalizedTickets,
+      },
+    };
   } catch (error) {
     console.error("Error fetching order history:", error.response || error);
     throw error;

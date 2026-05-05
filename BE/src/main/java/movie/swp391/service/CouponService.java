@@ -4,6 +4,7 @@ import movie.swp391.entity.Coupon;
 import movie.swp391.request.ApplyCouponRequest;
 import movie.swp391.request.CreateCouponRequest;
 import movie.swp391.response.ApplyCouponResponse;
+import movie.swp391.response.GameCouponResponse;
 
 import java.util.List;
 
@@ -14,5 +15,6 @@ public interface CouponService {
     List<Coupon> viewAllCoupons();
     void turnIsGame(Integer couponId);
     Coupon randomGameCoupon(Integer customerId);
+    List<GameCouponResponse> getMyGameCoupons(Integer customerId);
     void deleteCoupon(Integer couponId);
 }

@@ -73,6 +73,9 @@ const ProfilePage = () => {
             avatar: avatar,
             // loyalty-related fields removed: score, finalScore, rank, rankImage
             updatedDate: profile.updatedDate || "",
+            favoriteGenres: Array.isArray(profile.favoriteGenres) && profile.favoriteGenres.length
+              ? profile.favoriteGenres
+              : JSON.parse(localStorage.getItem("favoriteGenres") || "[]"),
           });
         }
       }
@@ -284,6 +287,14 @@ const ProfilePage = () => {
                             <div className="flex items-center gap-2 w-full min-w-0 overflow-x-auto">
                               <FiMapPin className="text-lg text-[#FF7120]" />
                               <span className="break-words w-full min-w-0">{formData.address}</span>
+                            </div>
+                            <div className="flex items-start gap-2 w-full min-w-0 overflow-x-auto">
+                              <FiFilm className="text-lg text-[#FF7120] mt-1" />
+                              <span className="break-words w-full min-w-0">
+                                {(formData.favoriteGenres || []).length
+                                  ? formData.favoriteGenres.join(", ")
+                                  : "Chưa chọn thể loại yêu thích"}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2 w-full min-w-0 overflow-x-auto">
                               <FiCalendar className="text-lg text-[#FF7120]" />

@@ -1,8 +1,21 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import { FiX, FiUser, FiMail, FiCalendar, FiPhone, FiMapPin, FiAward } from "react-icons/fi";
+import { FiX, FiUser, FiMail, FiCalendar, FiPhone, FiMapPin, FiAward, FiFilm } from "react-icons/fi";
 import { updateProfile } from "../../../../service/profile";
 import { toast } from "react-toastify";
+
+const GENRE_OPTIONS = [
+  "Hành động",
+  "Phiêu lưu",
+  "Kinh dị",
+  "Tình cảm",
+  "Hài",
+  "Hoạt hình",
+  "Khoa học viễn tưởng",
+  "Tâm lý",
+  "Gia đình",
+  "Thần thoại",
+];
 
 // Validate helpers
 function isIdentityCardValid(identityCard) {
@@ -20,7 +33,14 @@ const EditProfile = ({
   onClose,
   onSuccess,
 }) => {
-  const [formData, setFormData] = useState(initialData);
+  const initialFavoriteGenres = Array.isArray(initialData?.favoriteGenres) && initialData.favoriteGenres.length
+    ? initialData.favoriteGenres
+    : JSON.parse(localStorage.getItem("favoriteGenres") || "[]");
+
+  const [formData, setFormData] = useState({
+    ...initialData,
+    favoriteGenres: initialFavoriteGenres,
+  });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -31,6 +51,14 @@ const EditProfile = ({
       [name]: value,
     }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
+  };
+
+  const handleGenreChange = (e) => {
+    const selectedValues = Array.from(e.target.selectedOptions).map((option) => option.value);
+    setFormData((prev) => ({
+      ...prev,
+      favoriteGenres: selectedValues,
+    }));
   };
 
   const validate = () => {
@@ -52,7 +80,25 @@ const EditProfile = ({
     if (Object.keys(newErrors).length > 0) return;
     setLoading(true);
     try {
-      const result = await updateProfile(formData);
+      const favoriteGenres = Array.isArray(formData.favoriteGenres)
+        ? formData.favoriteGenres
+        : [];
+
+      localStorage.setItem("favoriteGenres", JSON.stringify(favoriteGenres));
+      window.dispatchEvent(new Event("favoriteGenresUpdated"));
+
+      const payload = {
+        fullName: formData.fullName,
+        dateOfBirth: formData.dateOfBirth,
+        sex: formData.sex,
+        email: formData.email,
+        identityCard: formData.identityCard,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        favoriteGenres,
+      };
+
+      const result = await updateProfile(payload);
       if (result && result.success) {
         if (onSuccess) onSuccess();
         onClose();
@@ -62,7 +108,7 @@ const EditProfile = ({
           autoClose: 2000,
         });
       } else {
-        toast.error("Cập nhật thông tin thất bại.", {
+        toast.error(result?.message || "Cập nhật thông tin thất bại.", {
           icon: "❗",
           position: "top-right",
           autoClose: 2000,
@@ -167,6 +213,22 @@ const EditProfile = ({
               required
             />
             {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+          </div>
+          <div>
+            <label className="text-[#FF7120] font-semibold mb-1 flex items-center gap-2"><FiFilm /> Thể loại yêu thích</label>
+            <select
+              multiple
+              value={formData.favoriteGenres || []}
+              onChange={handleGenreChange}
+              className="w-full border-2 border-[#FF7120] rounded-xl px-4 py-2 text-base focus:ring-2 focus:ring-[#FF7120] focus:border-[#FF7120] min-h-[120px]"
+            >
+              {GENRE_OPTIONS.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Giữ Ctrl (hoặc Cmd trên Mac) để chọn nhiều thể loại.</p>
           </div>
           <div>
             <label className="text-[#FF7120] font-semibold mb-1 flex items-center gap-2"><FiPhone /> Số điện thoại</label>

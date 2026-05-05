@@ -7,7 +7,7 @@ import { mockSuccessPayment } from "../../../../service/payment";
 
 const encodeId = (id) => btoa(String(id));
 const normalize = (str) =>
-  str
+  String(str || "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -59,13 +59,14 @@ const TicketCard = React.forwardRef(({ order }, ref) => (
     </div>
     <div style={{ textAlign: "center", fontWeight: 600, fontSize: 13, marginBottom: 2 }}>MÃ VÉ</div>
     <div style={{ textAlign: "center", color: "#dc2626", fontWeight: 700, fontSize: 22, marginBottom: 8 }}>
-      {order.bookingId}
+      {order.ticketId || order.bookingId}
     </div>
     <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
       <div style={{ background: "#f3f4f6", padding: 8, borderRadius: 8 }}>
         <img
           src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
             JSON.stringify({
+              ticketId: order.ticketId || order.bookingId,
               bookingId: order.bookingId,
               movieTitle: order.movieTitle,
               showDate: order.showDate,
@@ -182,7 +183,8 @@ const MyOrdered = () => {
   useEffect(() => {
     if (downloadOrder && ticketRef.current) {
       setTimeout(async () => {
-        await handleDownloadTicket(ticketRef.current, `ve_xem_phim_${downloadOrder.bookingId}.png`);
+        const fileId = downloadOrder.ticketId || downloadOrder.bookingId;
+        await handleDownloadTicket(ticketRef.current, `ve_xem_phim_${fileId}.png`);
         setDownloadOrder(null); // Ẩn component sau khi tải xong
       }, 100); // Đợi DOM render
     }
@@ -194,7 +196,8 @@ const MyOrdered = () => {
     const matchSearch =
       !q ||
       (order.movieTitle && order.movieTitle.toLowerCase().includes(q)) ||
-      (order.bookingId && String(order.bookingId).toLowerCase().includes(q));
+      (order.bookingId && String(order.bookingId).toLowerCase().includes(q)) ||
+      (order.ticketId && String(order.ticketId).toLowerCase().includes(q));
     const matchStatus =
       !statusFilter || String(order.status || "").toLowerCase() === statusFilter.toLowerCase();
     const matchDate =
@@ -273,11 +276,12 @@ const MyOrdered = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-slide">
           {paged.map((order, idx) => (
             <div
-              key={order.bookingId || idx}
+              key={order.ticketId || order.bookingId || idx}
               className="bg-white rounded-xl shadow-lg border border-blue-100 p-4 flex flex-col gap-3 hover:shadow-2xl transition cursor-pointer group"
               onClick={e => {
                 if (e.target.closest("button")) return;
-                navigate(`/my-orders/${encodeId(order.bookingId)}-${normalize(order.movieTitle)}`);
+                const targetId = order.ticketId || order.bookingId;
+                navigate(`/my-orders/${encodeId(targetId)}-${normalize(order.movieTitle)}`);
               }}
             >
               <div className="flex gap-3 items-center">
@@ -294,7 +298,7 @@ const MyOrdered = () => {
                   >
                     {order.movieTitle}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">Mã vé: <span className="font-mono">{order.bookingId}</span></div>
+                  <div className="text-xs text-gray-500 mt-1">Mã vé: <span className="font-mono">{order.ticketId || order.bookingId}</span></div>
                   <div className="text-xs text-gray-500 mt-1">Ngày chiếu: <span className="font-semibold">{order.showDate}</span></div>
                   <div className="text-xs text-gray-500">Giờ: <span className="font-semibold">{order.showTime}</span></div>
                   <div className="text-xs text-gray-500">Ghế: <span className="font-semibold">{Array.isArray(order.seats) && order.seats.length > 0 ? order.seats.map(seat => seat.seatName).join(", ") : "-"}</span></div>

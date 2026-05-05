@@ -3,11 +3,9 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getAllMovies } from "../../../service/landingpage";
 import {
   FaClock, FaLanguage, FaClosedCaptioning, FaTag, FaInfoCircle, FaPlayCircle,
-  FaArrowLeft, FaHeart, FaRegHeart, FaUserTie, FaCalendarAlt, FaBuilding, FaUsers,
+  FaArrowLeft, FaUserTie, FaCalendarAlt, FaBuilding, FaUsers,
   FaCalendarCheck, FaCalendarTimes, FaSignal
 } from "react-icons/fa";
-import { toggleFavoriteMovie, getFavoriteMovies } from "../../../service/wishlist";
-import { toast } from "react-toastify";
 import Snackbar from "../BookMovieTickets/Snackbar";
 import BookingSection from "../BookMovieTickets/BookingSection";
 
@@ -53,7 +51,6 @@ const MovieDetail = () => {
   const location = useLocation();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [currentShowtime, setCurrentShowtime] = useState(null); // Thêm state cho showtime hiện tại
   const [bookingInfo, setBookingInfo] = useState({
     movieTitle: "",
@@ -87,58 +84,6 @@ const MovieDetail = () => {
     };
     fetchMovie();
   }, [slug]);
-
-  useEffect(() => {
-    const checkFavorite = async () => {
-      if (!slug || !movie) return;
-      const res = await getFavoriteMovies();
-      if (!res.error && Array.isArray(res.result)) {
-        const normalize = str =>
-          str
-            .toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            .replace(/\s+/g, "_");
-        setIsFavorite(
-          res.result.some(
-            (item) => normalize(item.title || item.movieTitle) === slug
-          )
-        );
-      }
-    };
-    checkFavorite();
-  }, [slug, movie]);
-
-  const handleFavoriteClick = async (e) => {
-    e?.stopPropagation?.();
-    const customerId = Number(localStorage.getItem("id"));
-    if (!customerId) {
-      toast.error("Bạn cần đăng nhập để sử dụng chức năng này!");
-      return;
-    }
-    const res = await toggleFavoriteMovie({ movieId: movie?.movieID, customerId });
-    if (!res.error) {
-      toast.success(isFavorite ? "Đã xóa khỏi danh sách yêu thích!" : "Đã thêm vào danh sách yêu thích!");
-      // Gọi lại checkFavorite để cập nhật trạng thái
-      const checkFavorite = async () => {
-        const res = await getFavoriteMovies();
-        if (!res.error && Array.isArray(res.result)) {
-          const normalize = str =>
-            str
-              .toLowerCase()
-              .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-              .replace(/\s+/g, "_");
-          setIsFavorite(
-            res.result.some(
-              (item) => normalize(item.title || item.movieTitle) === slug
-            )
-          );
-        }
-      };
-      checkFavorite();
-    } else {
-      toast.error(res.message || "Cập nhật danh sách yêu thích thất bại!");
-    }
-  };
 
   // Hàm xử lý khi showtime thay đổi
   const handleShowtimeChange = (showtime) => {
@@ -205,13 +150,6 @@ const MovieDetail = () => {
                   <h1 className="text-2xl md:text-3xl font-extrabold uppercase tracking-wide leading-tight drop-shadow-lg text-white">
                     {movie.title}
                   </h1>
-                  <button
-                    className="ml-2 text-rose-600 hover:text-rose-800 text-4xl transition"
-                    title={isFavorite ? "Bỏ khỏi yêu thích" : "Thêm vào yêu thích"}
-                    onClick={handleFavoriteClick}
-                  >
-                    {isFavorite ? <FaHeart /> : <FaRegHeart />}
-                  </button>
                 </div>
                 <div className="flex flex-wrap gap-3 items-center mb-4">
                   <span className="flex items-center gap-2 text-orange-400 text-base font-semibold">

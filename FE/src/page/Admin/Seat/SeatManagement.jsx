@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Modal, Tooltip, Button, Select } from "antd";
-import { getAllSeats, toggleSeatAvailability } from "../../../service/seat";
+import { getAllSeats, toggleSeatAvailability, getAllSeatTypes, updateSeatTypeBatch } from "../../../service/seat";
 import AddSeat from "./AddSeat";
 import EditSeat from "./EditSeat";
 import { HomeOutlined, InboxOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { showSuccessToast, showErrorToast } from "../../../utils/toast";
 
-const normalizeSeatType = (seatType) => String(seatType || "").toLowerCase();
+const normalizeSeatType = (seatType) =>
+  String(seatType || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 const isVipSeat = (seatType) => normalizeSeatType(seatType).includes("vip");
-const isDoubleSeat = (seatType) => normalizeSeatType(seatType).includes("double") || normalizeSeatType(seatType).includes("doi");
+const isDoubleSeat = (seatType) => {
+  const normalized = normalizeSeatType(seatType);
+  return normalized.includes("double") || normalized.includes("doi");
+};
 const getSeatFillClass = (seatType) => {
   if (isVipSeat(seatType)) return "bg-yellow-200 text-yellow-900 shadow-[0_0_8px_2px_rgba(255,193,7,0.3)]";
   if (isDoubleSeat(seatType)) return "bg-purple-200 text-purple-900 shadow-[0_0_8px_2px_rgba(168,85,247,0.25)]";
@@ -40,6 +48,14 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [selectedRoomForAdd, setSelectedRoomForAdd] = useState(null);
   const [allRooms, setAllRooms] = useState([]);
+  const [seatTypes, setSeatTypes] = useState([]);
+  const [showSeatActionModal, setShowSeatActionModal] = useState(false);
+  const [selectedSeatsByRoom, setSelectedSeatsByRoom] = useState({});
+  const [selectedActionRoom, setSelectedActionRoom] = useState(null);
+  const [selectedSeatsForAction, setSelectedSeatsForAction] = useState([]);
+  const [selectedSeatTypeId, setSelectedSeatTypeId] = useState("");
+  const [selectedSeatPrice, setSelectedSeatPrice] = useState(0);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Lấy dữ liệu ghế và flatten để dễ render
   const fetchSeats = async ({ page = 1, pageSize = 6, search = searchText, city = cityFilter, cinema = cinemaFilter, room = roomFilter } = {}) => {
@@ -149,6 +165,16 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
   }, []);
 
   useEffect(() => {
+    const fetchSeatTypes = async () => {
+      const res = await getAllSeatTypes();
+      if (res.success) {
+        setSeatTypes(Array.isArray(res.data) ? res.data : []);
+      }
+    };
+    fetchSeatTypes();
+  }, []);
+
+  useEffect(() => {
     fetchSeats({ page: 1, pageSize: pagination.pageSize, search: searchText, city: cityFilter, cinema: cinemaFilter, room: roomFilter });
   }, [searchText, cityFilter, cinemaFilter, roomFilter]);
 
@@ -214,6 +240,125 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
       }
     } catch (err) {
       showErrorToast("Mất kết nối server");
+    }
+  };
+
+  const resolveSeatTypeId = (seatTypeLabel) => {
+    if (!seatTypeLabel) return "";
+    const found = seatTypes.find(
+      (type) =>
+        type.code?.toLowerCase() === String(seatTypeLabel).toLowerCase() ||
+        type.name?.toLowerCase() === String(seatTypeLabel).toLowerCase()
+    );
+    return found?.seatTypeID || "";
+  };
+
+  const getRoomSelection = (roomId) => selectedSeatsByRoom[String(roomId)] || [];
+
+  const extractSeatPosition = (seatName) => {
+    const match = String(seatName || "").trim().match(/^([A-Za-z]+)(\d+)$/);
+    if (!match) return null;
+    return { row: match[1].toUpperCase(), col: Number(match[2]) };
+  };
+
+  const isDoubleTargetType = (seatTypeId) => {
+    const chosen = seatTypes.find((type) => type.seatTypeID === Number(seatTypeId));
+    if (!chosen) return false;
+    return isDoubleSeat(chosen.code) || isDoubleSeat(chosen.name);
+  };
+
+  const validateHorizontalAdjacentIgnoringGap = (selectedSeats) => {
+    if (selectedSeats.length !== 2) return false;
+
+    const first = extractSeatPosition(selectedSeats[0].seatName);
+    const second = extractSeatPosition(selectedSeats[1].seatName);
+    return !!first && !!second && first.row === second.row && Math.abs(first.col - second.col) === 1;
+  };
+
+  const toggleSeatSelection = (seat, room) => {
+    const roomKey = String(room.cinemaRoomID);
+    setSelectedSeatsByRoom((prev) => {
+      const current = prev[roomKey] || [];
+      const exists = current.some((item) => item.seatID === seat.seatID);
+      const next = exists
+        ? current.filter((item) => item.seatID !== seat.seatID)
+        : [
+            ...current,
+            {
+              ...seat,
+              roomName: room.roomName,
+              cinemaRoomID: room.cinemaRoomID,
+            },
+          ];
+      return { ...prev, [roomKey]: next };
+    });
+  };
+
+  const openSeatAction = (room) => {
+    const selectedSeats = getRoomSelection(room.cinemaRoomID);
+    if (selectedSeats.length === 0) {
+      showErrorToast("Vui lòng chọn ít nhất 1 ghế để chỉnh sửa");
+      return;
+    }
+
+    const firstSeat = selectedSeats[0];
+    setSelectedActionRoom(room);
+    setSelectedSeatsForAction(selectedSeats);
+    setSelectedSeatTypeId(resolveSeatTypeId(firstSeat.seatType));
+    setSelectedSeatPrice(firstSeat.price || 0);
+    setShowSeatActionModal(true);
+  };
+
+  const handleSaveSeatType = async () => {
+    if (!selectedActionRoom || selectedSeatsForAction.length === 0) return;
+    if (!selectedSeatTypeId) {
+      showErrorToast("Vui lòng chọn loại ghế");
+      return;
+    }
+    if (Number(selectedSeatPrice) < 0) {
+      showErrorToast("Giá ghế không hợp lệ");
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const chosenType = seatTypes.find((t) => t.seatTypeID === Number(selectedSeatTypeId));
+
+      if (isDoubleTargetType(selectedSeatTypeId)) {
+        if (selectedSeatsForAction.length !== 2) {
+          showErrorToast("Khi đổi sang ghế đôi, bạn phải chọn đúng 2 ghế");
+          return;
+        }
+        if (!validateHorizontalAdjacentIgnoringGap(selectedSeatsForAction)) {
+          showErrorToast("2 ghế đôi phải cùng hàng và có số ghế liền kề (ví dụ C1 + C2)");
+          return;
+        }
+      }
+
+      const res = await updateSeatTypeBatch({
+        cinemaRoomId: Number(selectedActionRoom.cinemaRoomID),
+        seatIds: selectedSeatsForAction.map((seat) => seat.seatID),
+        seatTypeId: Number(selectedSeatTypeId),
+        seatType: chosenType?.code || chosenType?.name,
+        price: Number(selectedSeatPrice),
+      });
+
+      if (!res.success) {
+        showErrorToast(res.message || "Cập nhật loại ghế thất bại");
+        return;
+      }
+
+      showSuccessToast(`Đã cập nhật loại ghế thành công cho ${selectedSeatsForAction.length} ghế`);
+      setShowSeatActionModal(false);
+      setSelectedSeatsByRoom((prev) => ({
+        ...prev,
+        [String(selectedActionRoom.cinemaRoomID)]: [],
+      }));
+      setSelectedSeatsForAction([]);
+      setSelectedActionRoom(null);
+      fetchSeats({ page: pagination.current, pageSize: pagination.pageSize });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -350,6 +495,15 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
                   <div className="text-xs text-blue-600 font-medium">
                     {room.seats.length} ghế
                   </div>
+                  <Tooltip title="Cập nhật ghế đã chọn">
+                    <Button
+                      size="small"
+                      onClick={() => openSeatAction(room)}
+                      disabled={getRoomSelection(room.cinemaRoomID).length === 0}
+                    >
+                      Sửa ({getRoomSelection(room.cinemaRoomID).length})
+                    </Button>
+                  </Tooltip>
                   <Tooltip title="Thêm ghế cho phòng này">
                     <Button
                       size="small"
@@ -428,10 +582,11 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
                                       key={seat.seatID}
                                       className={`w-8 h-8 flex items-center justify-center rounded font-bold border text-xs cursor-pointer transition-all duration-200
                                         ${getSeatFillClass(seat.seatType)}
+                                        ${getRoomSelection(room.cinemaRoomID).some((item) => item.seatID === seat.seatID) ? 'ring-2 ring-blue-500 scale-105' : ''}
                                         ${seat.isAvailable ? 'border-green-400 hover:scale-110 hover:shadow-lg hover:border-blue-400' : 'border-red-400 opacity-50'}
                                       `}
                                       title={`${seat.seatName} - ${getSeatTypeLabel(seat.seatType)} - ${seat.price?.toLocaleString()} đ`}
-                                      onClick={() => handleSeatToggle(seat)}
+                                      onClick={() => toggleSeatSelection(seat, room)}
                                     >
                                       {seat.seatName}
                                     </div>
@@ -584,6 +739,77 @@ const SeatManagement = ({ addModalVisible, setAddModalVisible }) => {
             setSelectedSeat(null);
           }}
         />
+      </Modal>
+
+      <Modal
+        title="Điều chỉnh ghế trong phòng"
+        open={showSeatActionModal}
+        onCancel={() => {
+          setShowSeatActionModal(false);
+          setSelectedSeatsForAction([]);
+          setSelectedActionRoom(null);
+        }}
+        footer={null}
+        width={520}
+      >
+        {selectedActionRoom && selectedSeatsForAction.length > 0 && (
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg border bg-gray-50">
+              <div className="text-sm text-gray-600">Phòng: <span className="font-semibold text-gray-900">{selectedActionRoom.roomName}</span></div>
+              <div className="text-sm text-gray-600">Số ghế đã chọn: <span className="font-semibold text-gray-900">{selectedSeatsForAction.length}</span></div>
+              <div className="text-sm text-gray-600">Danh sách ghế: <span className="font-semibold text-gray-900">{selectedSeatsForAction.map((seat) => seat.seatName).join(", ")}</span></div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Loại ghế mới</label>
+              <Select
+                className="w-full"
+                value={selectedSeatTypeId || undefined}
+                placeholder="Chọn loại ghế"
+                onChange={(value) => {
+                  setSelectedSeatTypeId(value);
+                  const nextType = seatTypes.find((type) => type.seatTypeID === Number(value));
+                  if (nextType?.basePrice != null) {
+                    setSelectedSeatPrice(nextType.basePrice);
+                  }
+                }}
+                options={seatTypes.map((type) => ({
+                  value: type.seatTypeID,
+                  label: `${type.name} (${Number(type.basePrice || 0).toLocaleString("vi-VN")}đ)`,
+                }))}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Giá ghế</label>
+              <input
+                type="number"
+                min={0}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                value={selectedSeatPrice}
+                onChange={(e) => setSelectedSeatPrice(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                disabled={selectedSeatsForAction.length !== 1}
+                onClick={async () => {
+                  if (selectedSeatsForAction.length !== 1) return;
+                  await handleSeatToggle(selectedSeatsForAction[0]);
+                  setShowSeatActionModal(false);
+                  setSelectedSeatsForAction([]);
+                  setSelectedActionRoom(null);
+                }}
+              >
+                {selectedSeatsForAction.length === 1 && selectedSeatsForAction[0].isAvailable ? "Khóa ghế" : "Mở ghế"}
+              </Button>
+              <Button type="primary" loading={actionLoading} onClick={handleSaveSeatType}>
+                Lưu loại ghế
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </>
   );

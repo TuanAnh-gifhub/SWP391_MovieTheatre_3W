@@ -38,18 +38,18 @@ const MyOrderedDetail = () => {
           data = [data];
         }
         const normalize = (str) =>
-          str
+          String(str || "")
             .toLowerCase()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/\s+/g, "_");
         // Tách mã đã mã hóa và slug
         const [encodedId, ...slugParts] = slug.split("-");
-        const bookingId = decodeId(encodedId);
+        const ticketId = decodeId(encodedId);
         const movieSlug = slugParts.join("-");
         const found = data?.find(
           (item) =>
-            String(item.bookingId) === bookingId &&
+            (String(item.ticketId || item.bookingId) === ticketId || String(item.bookingId) === ticketId) &&
             normalize(item.movieTitle) === movieSlug
         );
         setOrder(found || null);
@@ -114,10 +114,11 @@ const MyOrderedDetail = () => {
           {/* QR code và mã vé */}
           <div className="flex flex-col items-center mb-4">
             <div className="text-gray-600 font-semibold mb-1">MÃ VÉ</div>
-            <div className="text-2xl font-bold text-red-600 mb-1 tracking-widest">{order.bookingId}</div>
+            <div className="text-2xl font-bold text-red-600 mb-1 tracking-widest">{order.ticketId || order.bookingId}</div>
             <div className="bg-gray-100 p-2 rounded-lg">
               <QRCode
                 value={JSON.stringify({
+                  ticketId: order.ticketId || order.bookingId,
                   bookingId: order.bookingId,
                   movieTitle: order.movieTitle,
                   showDate: order.showDate,
@@ -198,7 +199,7 @@ const MyOrderedDetail = () => {
             Cảm ơn bạn đã lựa chọn mua vé! Chúc bạn xem phim vui vẻ!
           </div>
           <button
-            onClick={() => handleDownloadTicket(cardRef.current, `ve_xem_phim_${order.bookingId}.png`)}
+            onClick={() => handleDownloadTicket(cardRef.current, `ve_xem_phim_${order.ticketId || order.bookingId}.png`)}
             className="w-full py-2 bg-gradient-to-r from-orange-600 to-yellow-500 hover:from-orange-500 hover:to-yellow-400 text-black rounded font-semibold transition"
           >
             Lưu vé
@@ -218,3 +219,4 @@ const MyOrderedDetail = () => {
 };
 
 export default MyOrderedDetail;
+

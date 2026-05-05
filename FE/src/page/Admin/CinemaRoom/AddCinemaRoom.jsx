@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Form, Input, InputNumber, Select } from "antd";
-import { createCinemaRoom, getAllCinemaRooms } from "../../../service/cinemaroom";
+import { createCinemaRoom } from "../../../service/cinemaroom";
+import { getAllCinemas } from "../../../service/cinema";
 import { showSuccessToast, showErrorToast } from "../../../utils/toast";
-import { VideoCameraOutlined, HomeOutlined, TeamOutlined } from "@ant-design/icons";
+import { VideoCameraOutlined, HomeOutlined } from "@ant-design/icons";
 
 const AddCinemaRoom = ({ onSuccess, onClose }) => {
   const [form] = Form.useForm();
@@ -10,18 +11,9 @@ const AddCinemaRoom = ({ onSuccess, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Lấy danh sách phòng chiếu, lọc ra các rạp duy nhất
-    getAllCinemaRooms().then(res => {
+    getAllCinemas().then(res => {
       if (res.success && Array.isArray(res.data)) {
-        const uniqueCinemas = [];
-        const cinemaMap = {};
-        res.data.forEach(room => {
-          if (room.cinemaId && room.name && !cinemaMap[room.cinemaId]) {
-            cinemaMap[room.cinemaId] = true;
-            uniqueCinemas.push({ id: room.cinemaId, name: room.name });
-          }
-        });
-        setCinemas(uniqueCinemas);
+        setCinemas(res.data.map(cinema => ({ id: cinema.cinemaId, name: cinema.name })));
       }
     });
   }, []);
@@ -32,7 +24,7 @@ const AddCinemaRoom = ({ onSuccess, onClose }) => {
       setLoading(true);
 
       const payload = {
-        roomName: [values.roomName],
+        roomName: [values.roomName?.trim()],
         seatQuantity: Number(values.seatQuantity),
         cinemaId: Number(values.cinemaId),
       };
